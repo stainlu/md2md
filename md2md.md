@@ -227,90 +227,33 @@ if you also want your `.com` site to serve markdown to agents (in addition to yo
 
 ## why .md is most suitable
 
-everything above — local file caching, background sync, frontmatter metadata — works technically for any TLD. you could build md2md for `toilet.com`. but `.md` has a structural advantage that no other TLD has. and it's not branding.
+everything above works technically for any TLD. you could build md2md for `toilet.com`. but after onboarding is done and daily life begins, `.md` has concrete advantages.
 
-### the behavioral asymmetry
+remember: after onboarding, nobody says "read toilet.md." users just ask questions. agents search locally. that's where it matters.
 
-forget about the onboarding step — both approaches work fine when you explicitly tell an agent "go read this." the real question is: **what happens in all the later cases?**
+### the filename IS the search keyword
 
-after onboarding is done, nobody tells the agent "read toilet.md" or "read toilet.com/skill.md." the agent encounters these references organically — in conversations, in its own context, during local search. and here's where the asymmetry emerges:
+you subscribe to `toilet.md`. file saved as `toilet.md`. a week later, user asks "what's toilet's API for reviews?" agent Greps for "toilet" → finds `toilet.md` → reads it → done.
 
-**after onboarding with `toilet.com/skill.md`:**
-- the content was summarized into the context window and is now gone (session ended)
-- user asks about toilet → agent searches locally → finds nothing (it was text in a dead context, not a file)
-- agent falls back to web → WebFetches `toilet.com/skill.md` again → lossy pipeline again
-- every single encounter goes through the web. every time lossy. every time slow.
+you subscribe to `toilet.com/skill.md`. file saved as... `skill.md`? user asks about toilet → agent Greps for "toilet" → `skill.md` doesn't match → miss.
 
-**after onboarding with `toilet.md` (md2md):**
-- the content was saved as a local file `toilet.md`
-- user asks about toilet → agent searches locally → Grep finds `toilet.md` → reads it → full content, instant
-- agent doesn't even think about the web. the file is right there.
-- background sync keeps it fresh. the agent never needs to re-fetch through the lossy pipeline.
+### multiple subscriptions don't collide
 
-the difference isn't at the front door. it's in everyday life. agents search locally first — that's hardcoded behavior. if `toilet.md` exists as a local file, agents will find it and use it. `toilet.com/skill.md` will never be found by local search because it's not a file — it's a URL that only works through the web pipeline.
+`toilet.md`, `moltbook.md`, `sharkclaw.md` → three files, distinct names, zero collision.
 
-### the unified namespace
+`toilet.com/skill.md`, `moltbook.com/skill.md`, `sharkclaw.com/skill.md` → all three want to be called `skill.md`. you have to invent a naming convention to avoid overwriting each other.
 
-`.md` is the only TLD that is also an agent-native file extension. this creates a **unified namespace** where the URL, the filename, and the reference are all the same string:
+### the filename tells the agent where to sync from
 
-`toilet.md` = `https://toilet.md` (URL) = `./toilet.md` (local file) = the reference in any instruction
+`toilet.md` → sync from `https://toilet.md`. the filename IS the URL.
 
-once an agent caches `https://toilet.md` as a local file called `toilet.md`, the loop closes naturally:
-- any future mention of `toilet.md` → agent finds the local file first
-- the agent's hardcoded local-first bias does the work for you
-- the background sync keeps the local file fresh
-- the agent never goes through the lossy web pipeline again
+`skill.md` (cached from toilet.com) → sync from where? the filename says nothing. you need a mapping table.
 
-### why xxx.com/skill.md can't be mapped to xxx.md
+### the loop closes
 
-"just cache `toilet.com/skill.md` as `toilet.md` locally." sounds simple. here's why it fundamentally doesn't work:
+after saving `toilet.md`, user asks about toilet in any future conversation → agent searches locally → finds `toilet.md` → reads it → full content, instant. never touches the web.
 
-**the reference is permanently a URL.** the string `toilet.com/skill.md` will ALWAYS trigger URL-first behavior in agents. the `xxx.com/` pattern is an unmistakable URL signal. no matter what you cache locally, the instruction "read toilet.com/skill.md" will WebFetch every time. the cache is ignored.
-
-`toilet.md` is genuinely ambiguous — file or URL? agents default to file. this ambiguity is the feature.
-
-**many-to-one collision.** `toilet.com` has many pages: `/skill.md`, `/api.md`, `/docs.md`. which one gets the name `toilet.md`? you can only map one. with the `.md` TLD, the domain IS the file. subpages map cleanly: `toilet.md/reviews.md` → `./toilet.md/reviews.md`.
-
-**namespace pollution.** mapping `brand-a.com/skill.md` → `brand-a.md` collides when `brand-a.md` is also a real `.md` domain. every `.com`-to-`.md` mapping is a potential collision.
-
-**the agent can't reverse the mapping.** finding a local file called `toilet.md`, the agent can infer the sync source: `https://toilet.md`. the filename IS the URL. self-describing. but if `toilet.md` is a cached copy of `toilet.com/skill.md`? the filename lies about its origin. the agent has to open the file and read the frontmatter to find the source.
-
-**the sync reference is broken.** "sync `toilet.md`" with the `.md` TLD → the filename tells you what to fetch and where to save. one string, both directions. with `.com` → "sync `toilet.md`" tells you nothing about the source. you need a separate mapping table — extra state that can go stale or conflict.
-
-### url path = local file path
-
-```
-remote:                             local:
-https://toilet.md/                → ./toilet.md/index.md
-https://toilet.md/reviews.md      → ./toilet.md/reviews.md
-https://toilet.md/api.md          → ./toilet.md/api.md
-```
-
-the domain becomes a folder. subpaths become files. the entire website mirrors into a local directory that agents naturally navigate.
-
-compare with `.com`:
-
-```
-remote:                             local:
-https://toilet.com/                → ./toilet.com/index.md?  (weird)
-https://toilet.com/skill.md        → ./toilet.com/skill.md?  (collides with .md domain)
-https://toilet.com/about           → ./toilet.com/about.md?  (invented extension)
-```
-
-### the TLD as protocol signal
-
-today, TLDs are just addresses. `.com`, `.org`, `.io` — they say nothing about the content.
-
-`.md` breaks this. when an agent sees `.md`, it can infer:
-1. **what it is** — markdown (agent-native, no conversion needed)
-2. **where it lives remotely** — `https://xxx.md`
-3. **where it lives locally** — `./xxx.md`
-
-like `mailto:` tells a browser "open email" and `tel:` says "open phone," `.md` tells an agent: "this is your content — cache it, read it, keep it fresh."
-
-`.ai` caught attention as the TLD for AI startups. but `.ai` has no real meaning — it's Anguilla's country code that happened to spell "AI." `.md` has **double meaning**: it's Moldova's country code AND the file extension for the most agent-friendly format in existence. it's the only TLD where the domain name is also a valid agent-native filename.
-
-and one more trick: drop `toilet.md` in Slack, Discord, or Telegram — it gets auto-linked (valid TLD). `README.md` doesn't (not a domain). both look like file references to developers, but only the `.md` TLD one generates traffic.
+after saving `skill.md` (from toilet.com), user asks about toilet → agent searches locally → `skill.md` doesn't match "toilet" → agent falls back to web → WebFetches `toilet.com/skill.md` → lossy pipeline. again.
 
 ---
 
