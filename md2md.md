@@ -199,6 +199,28 @@ if you also want your existing site to serve markdown to agents, you can use con
 
 ---
 
+## a note on prompt injection
+
+the md2md frontmatter contains instructions that tell agents what to do — save locally, set up sync. by the strict definition, this is instructions embedded in content. some may call it prompt injection.
+
+we want to be clear about this rather than hide it.
+
+**prompt injection is not always malicious.** the distinction is who initiates it and whether it's visible:
+
+- malicious prompt injection: hidden (white-on-white text, zero-width characters), unsolicited, aims to override the user's intent
+- md2md: plain text frontmatter, fully visible, only executed when the user explicitly says "follow the instructions"
+
+this is closer to `npm install` than to a prompt attack. you install a package, it runs. you update it when a new version comes out. the user chose to install it. the source is known. the contents are inspectable.
+
+**trust model:**
+
+- **user-initiated only.** agents should never auto-subscribe to md2md. the user must explicitly ask the agent to follow the instructions. no silent subscriptions.
+- **trusted sources only.** we only suggest agents do this for websites trusted by their owners. if you don't trust the source, don't run the curl.
+- **auditable.** the local `.md` file is plain text on disk. you can open it, read it, diff it. you know exactly what your agent is reading — unlike WebFetch, where the content passes through opaque pipelines and you never see what the agent received.
+- **source pinning.** the `canonical` field locks the sync source. the agent syncs from that URL only.
+
+---
+
 ## why .md is most suitable
 
 this approach works technically for any TLD. you could build md2md for `toilet.com`. but `.md` has real defensive advantages. for example:
