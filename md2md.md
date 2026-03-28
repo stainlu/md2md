@@ -102,7 +102,7 @@ what if we could let agents store your website as a **dynamic local markdown fil
 
 that's md2md. markdown (URL) → markdown (file). lossless.
 
-<!-- {GitHub repo link} -->
+[github.com/stainlu/md2md](https://github.com/stainlu/md2md)
 
 ### the idea
 
@@ -166,10 +166,10 @@ READ (every time after):
 SYNC (background, every 1h):
 
   background process fires
-  → curl https://md2md.md -o md2md.md
-  → compare with previous version (ETag or content diff)
+  → HEAD https://md2md.md (~200 bytes)
+  → compare ETag with saved version
   → unchanged? skip. costs nothing.
-  → changed? local file already updated.
+  → changed? curl https://md2md.md -o md2md.md → local file updated.
 ```
 
 what the agent saves locally is this very file — the one you're reading. the `md2md:` frontmatter at the top tells the agent what to do. the `instructions` field is plain English — even an agent that has never heard of md2md can read it and act.
@@ -203,7 +203,7 @@ md2md:
 
 that's it. any static hosting works — Cloudflare Pages, Vercel, Netlify, GitHub Pages, Nginx, anything that can serve a file. no special infrastructure. no content negotiation. no platform-specific code. the `.md` domain IS the markdown file.
 
-if you also want your `.com` site to serve markdown to agents (in addition to your `.md` domain), that's where content negotiation comes in — Cloudflare's "Markdown for Agents" toggle, Vercel middleware, etc. but the `.md` domain doesn't need it. it's markdown by convention.
+if you also want your `.com` site to serve markdown to agents (in addition to your `.md` domain), that's where content negotiation comes in — Cloudflare's "Markdown for Agents" toggle, Vercel middleware, etc. but the `.md` domain doesn't need it. if you follow the md2md standard, the `.md` domain IS the markdown file.
 
 ### benefits
 
