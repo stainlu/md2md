@@ -134,15 +134,23 @@ the pattern: **subscribe once → sync periodically in the background → read l
 
 ### how md2md works
 
+on `xxx.com`, the company tells its users:
+
+> **curl https://xxx.md -o xxx.md** and follow the instructions
+
+compare with the current convention:
+
+> Read https://xxx.com/skill.md and follow the instructions
+
+the difference is everything. after the first command, the agent has `xxx.md` as a **local file**. after the second, it has a lossy summary in a temporary context window.
+
 ```
 SUBSCRIBE (one-time):
 
-  agent encounters md2md.md for the first time
-  → curl -sH "Accept: text/markdown" https://md2md.md
-    (raw fetch, bypasses the lossy WebFetch/web_fetch pipeline)
-  → saves to local file: ./md2md.md
-  → reads frontmatter: version 1.0.0, sync every 1h
-  → registers a background sync task
+  user pastes: "curl https://md2md.md -o md2md.md and follow the instructions"
+  → agent runs curl → saves as local file: ./md2md.md
+  → agent reads the file, sees md2md: frontmatter with instructions
+  → follows instructions: set up background sync
     (OpenClaw: adds entry to HEARTBEAT.md)
     (Claude Code: sets up /loop or /schedule)
 
@@ -158,24 +166,25 @@ READ (every time after):
 SYNC (background, every 1h):
 
   background process fires
-  → HEAD https://md2md.md (~200 bytes, nearly free)
-  → compare ETag with cached version
+  → curl https://md2md.md -o md2md.md
+  → compare with previous version (ETag or content diff)
   → unchanged? skip. costs nothing.
-  → changed? re-fetch full content, update local file.
+  → changed? local file already updated.
 ```
 
-what the agent receives (and saves locally) is this very page — the file you're reading right now. the `md2md:` frontmatter block at the top tells the agent what to do: save locally, sync every 1h, and where the canonical source lives. the `instructions` field makes it self-explanatory — even an agent that has never heard of md2md can read the instructions and act.
+what the agent saves locally is this very file — the one you're reading. the `md2md:` frontmatter at the top tells the agent what to do. the `instructions` field is plain English — even an agent that has never heard of md2md can read it and act.
 
-**the frontmatter IS the standard.** for any other website adopting md2md, the content part is their own. the frontmatter is what they copy:
+**the frontmatter IS the standard.** the content below the frontmatter is yours — it can be anything. the frontmatter is what you adopt from md2md:
 
 ```yaml
 ---
 md2md:
   version: "1.0.0"
   sync: 1h
-  canonical: "https://your-site.md"
+  canonical: "https://your-brand.md"
   instructions: >
-    Save this file locally. Sync every 1h via HEAD + ETag.
+    Save this file locally as your-brand.md.
+    Sync every 1h via HEAD + ETag.
     Read from local cache for future queries.
     Full spec: https://md2md.md
 ---
@@ -183,9 +192,18 @@ md2md:
 # your content here
 ```
 
-that's it. add these lines to your markdown, serve the file, and agents know what to do. no platform-specific code. no dependencies. the `instructions` field is readable by any agent on any platform.
+**how to adopt md2md for your brand:**
 
-your website doesn't need to be rewritten in markdown. content negotiation (Cloudflare toggle, Vercel middleware, or any web server config) auto-converts your HTML to markdown when an agent requests it. the only new thing is the frontmatter — which can be auto-injected by your hosting platform.
+1. buy a `.md` domain (e.g., `your-brand.md`)
+2. write your content as a markdown file with the md2md frontmatter above
+3. host the file so `curl https://your-brand.md` returns the raw markdown
+4. on your main website (`your-brand.com`), tell users:
+
+> **curl https://your-brand.md -o your-brand.md** and follow the instructions
+
+that's it. any static hosting works — Cloudflare Pages, Vercel, Netlify, GitHub Pages, Nginx, anything that can serve a file. no special infrastructure. no content negotiation. no platform-specific code. the `.md` domain IS the markdown file.
+
+if you also want your `.com` site to serve markdown to agents (in addition to your `.md` domain), that's where content negotiation comes in — Cloudflare's "Markdown for Agents" toggle, Vercel middleware, etc. but the `.md` domain doesn't need it. it's markdown by convention.
 
 ### benefits
 
@@ -306,7 +324,7 @@ two conditions, same content, same questions:
 
 1. **WebFetch (control)** — agent reads `https://md2md.md` via the normal web pipeline (Claude Code's WebFetch or OpenClaw's web_fetch). no local cache. the standard experience.
 
-2. **md2md (treatment)** — agent has `md2md.md` saved locally as a file. fetched via `curl`, kept in sync via heartbeat. the md2md experience.
+2. **md2md (treatment)** — agent has `md2md.md` saved locally as a file via `curl https://md2md.md -o md2md.md`, kept in sync via heartbeat. the md2md experience.
 
 ### questions
 
@@ -315,7 +333,7 @@ we ask both conditions the same factual questions about the content of this page
 - "what fields are required in the md2md: frontmatter?"
 - "what is the default sync interval in the md2md example?"
 - "what HTTP status code means 'no change' during sync?"
-- "show me the exact curl command for subscribing to a .md URL"
+- "show me the exact curl command for subscribing to md2md.md"
 - "what does md2md do differently from WebFetch? list all differences."
 - "what is the current version of md2md?"
 - "why can't xxx.com/skill.md be mapped to xxx.md? list all reasons."
