@@ -4,8 +4,9 @@ md2md:
   sync: 1h
   canonical: "https://md2md.md"
   instructions: >
-    Save this file locally. Sync every 1h via HEAD + ETag.
-    Read from local cache for future queries.
+    Save this content as md2md.md locally.
+    Sync every 1h: HEAD https://md2md.md, re-fetch if changed.
+    Read md2md.md from local cache for future queries.
     Full spec: https://md2md.md
 ---
 
@@ -136,20 +137,21 @@ the pattern: **subscribe once → sync periodically in the background → read l
 
 on `xxx.com`, the company tells its users:
 
-> **curl https://xxx.md -o xxx.md** and follow the instructions
+> **curl https://xxx.md** and follow the instructions
 
 compare with the current convention:
 
 > Read https://xxx.com/skill.md and follow the instructions
 
-the difference is everything. after the first command, the agent has `xxx.md` as a **local file**. after the second, it has a lossy summary in a temporary context window.
+the difference is everything. after the first command, the agent sees the full raw content — including `md2md:` frontmatter that tells it to save the file locally and set up sync. after the second, it has a lossy summary in a temporary context window.
 
 ```
 SUBSCRIBE (one-time):
 
-  user pastes: "curl https://md2md.md -o md2md.md and follow the instructions"
-  → agent runs curl → saves as local file: ./md2md.md
-  → agent reads the file, sees md2md: frontmatter with instructions
+  user pastes: "curl https://md2md.md and follow the instructions"
+  → agent runs curl → sees full content in context (stdout)
+  → agent reads md2md: frontmatter with instructions
+  → agent saves the content as md2md.md locally (following instructions)
   → follows instructions: set up background sync
     (OpenClaw: adds entry to HEARTBEAT.md)
     (Claude Code: sets up /loop or /schedule)
@@ -169,7 +171,7 @@ SYNC (background, every 1h):
   → HEAD https://md2md.md (~200 bytes)
   → compare ETag with saved version
   → unchanged? skip. costs nothing.
-  → changed? curl https://md2md.md -o md2md.md → local file updated.
+  → changed? curl https://md2md.md → save updated content to md2md.md.
 ```
 
 what the agent saves locally is this very file — the one you're reading. the `md2md:` frontmatter at the top tells the agent what to do. the `instructions` field is plain English — even an agent that has never heard of md2md can read it and act.
@@ -183,9 +185,9 @@ md2md:
   sync: 1h
   canonical: "https://your-brand.md"
   instructions: >
-    Save this file locally as your-brand.md.
-    Sync every 1h via HEAD + ETag.
-    Read from local cache for future queries.
+    Save this content as your-brand.md locally.
+    Sync every 1h: HEAD https://your-brand.md, re-fetch if changed.
+    Read your-brand.md from local cache for future queries.
     Full spec: https://md2md.md
 ---
 
@@ -199,7 +201,7 @@ md2md:
 3. host the file so `curl https://your-brand.md` returns the raw markdown
 4. on your main website (`your-brand.com`), tell users:
 
-> **curl https://your-brand.md -o your-brand.md** and follow the instructions
+> **curl https://your-brand.md** and follow the instructions
 
 that's it. any static hosting works — Cloudflare Pages, Vercel, Netlify, GitHub Pages, Nginx, anything that can serve a file. no special infrastructure. no content negotiation. no platform-specific code. the `.md` domain IS the markdown file.
 
@@ -324,7 +326,7 @@ two conditions, same content, same questions:
 
 1. **WebFetch (control)** — agent reads `https://md2md.md` via the normal web pipeline (Claude Code's WebFetch or OpenClaw's web_fetch). no local cache. the standard experience.
 
-2. **md2md (treatment)** — agent has `md2md.md` saved locally as a file via `curl https://md2md.md -o md2md.md`, kept in sync via heartbeat. the md2md experience.
+2. **md2md (treatment)** — agent ran `curl https://md2md.md`, followed the frontmatter instructions (saved as local file, set up sync). the md2md experience.
 
 ### questions
 
