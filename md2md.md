@@ -320,6 +320,20 @@ results coming soon.
 
 ---
 
+## localize everything. start from the internet.
+
+agents are empowering everyone. they read for us, search for us, act for us. and everything they do well, they do locally — reading files, searching directories, managing state. everything they do poorly, they do over the network — lossy fetches, stale context, forgotten content.
+
+local-first is not just a performance optimization. it's a security model. local files don't go through third-party summarizers. they don't get truncated by someone else's token budget. they don't leak through prompt injection surfaces in web pipelines. your content stays yours — on your disk, in your agent's memory, under your control.
+
+the internet was built for humans who browse. agents don't browse — they work. and the way they work best is locally. the web isn't going away. but for agents, the web becomes a sync layer, not an access layer. you fetch once. you sync in the background. you read locally, always.
+
+md2md is a small step: localize your website as a file. but the principle is bigger. every web resource an agent touches — docs, APIs, feeds, configs — could be a local file that stays in sync. the internet becomes the source of truth. the local filesystem becomes the workspace.
+
+localize everything. start from the internet.
+
+---
+
 ## version history
 
 - **1.0.0** (2026-03-28) — initial release
