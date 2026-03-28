@@ -231,21 +231,23 @@ everything above — local file caching, background sync, frontmatter metadata �
 
 ### the behavioral asymmetry
 
-watch what happens when you tell an agent two different things:
+forget about the onboarding step — both approaches work fine when you explicitly tell an agent "go read this." the real question is: **what happens in all the later cases?**
 
-**"read toilet.com/skill.md and do ..."**
-- agent interprets `toilet.com/skill.md` as a **URL**
-- uses WebFetch / web_fetch → lossy pipeline
-- memorizes the summary in context
-- won't check again unless explicitly told to
+after onboarding is done, nobody tells the agent "read toilet.md" or "read toilet.com/skill.md." the agent encounters these references organically — in conversations, in its own context, during local search. and here's where the asymmetry emerges:
 
-**"read toilet.md and do ..."**
-- agent interprets `toilet.md` as a **local file**
-- uses Read tool → raw content, lossless, instant
-- if it exists locally, reads it directly
-- if it doesn't exist, reports "file not found"
+**after onboarding with `toilet.com/skill.md`:**
+- the content was summarized into the context window and is now gone (session ended)
+- user asks about toilet → agent searches locally → finds nothing (it was text in a dead context, not a file)
+- agent falls back to web → WebFetches `toilet.com/skill.md` again → lossy pipeline again
+- every single encounter goes through the web. every time lossy. every time slow.
 
-this is real, observable, hardcoded behavior. agents default to local-file interpretation for `.md` references. agents default to URL interpretation for `.com` references.
+**after onboarding with `toilet.md` (md2md):**
+- the content was saved as a local file `toilet.md`
+- user asks about toilet → agent searches locally → Grep finds `toilet.md` → reads it → full content, instant
+- agent doesn't even think about the web. the file is right there.
+- background sync keeps it fresh. the agent never needs to re-fetch through the lossy pipeline.
+
+the difference isn't at the front door. it's in everyday life. agents search locally first — that's hardcoded behavior. if `toilet.md` exists as a local file, agents will find it and use it. `toilet.com/skill.md` will never be found by local search because it's not a file — it's a URL that only works through the web pipeline.
 
 ### the unified namespace
 
