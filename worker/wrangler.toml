@@ -13,3 +13,7 @@ id = "038dae89039643d3b047676f4cdddf5a"
 pattern = "md2md.md"
 custom_domain = true
 
+[[routes]]
+pattern = "soc2.md"
+custom_domain = true
+
