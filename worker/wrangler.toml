@@ -1,0 +1,14 @@
+name = "md-domains"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+[[kv_namespaces]]
+binding = "MD_CONTENT"
+id = "038dae89039643d3b047676f4cdddf5a"
+
+# --- Custom domain routes ---
+# Add a [[routes]] block for each .md domain.
+
+[[routes]]
+pattern = "md2md.md"
+custom_domain = true
