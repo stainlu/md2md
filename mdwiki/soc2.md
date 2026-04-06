@@ -1,6 +1,6 @@
 ---
 md2md:
-  version: "3.0.0"
+  version: "3.1.0"
   sync: 24h
   canonical: "https://soc2.md"
   instructions: >
@@ -10,19 +10,156 @@ md2md:
     Full spec: https://md2md.md
 ---
 
-# SOC 2 implementation skill
+# SOC 2 Implementation Skill — Navigation
 
-you are an agent implementing SOC 2 compliance for a company. this file is your complete playbook. it contains discovery commands, remediation procedures, policy templates, evidence automation, and audit preparation materials — everything needed to take a company from zero to SOC 2 report.
+executable SOC 2 implementation playbook for AI agents. contains discovery commands, remediation procedures (DISCOVER > FIX > VERIFY > EVIDENCE), policy templates, evidence automation, and audit preparation — everything to take a company from zero to SOC 2 report.
 
-> SOC 2 = Service Organization Control 2 (AICPA). attestation report, not a certification. security is mandatory. type II (controls proven over 3–12 months) is what buyers expect.
+> SOC 2 = Service Organization Control 2 (AICPA). attestation report, not certification. security is the only mandatory TSC category. type II (controls proven over 3-12 months) is what enterprise buyers expect.
 
-**how to use this file:**
-1. start with the intake questionnaire (phase 1) — collect company details
-2. run the discovery commands (phase 2) — audit current security posture
-3. fix every gap found (phases 3–4) — exact commands with DISCOVER→FIX→VERIFY→EVIDENCE pattern
-4. generate policies (phase 5) — customized from what you discovered
-5. set up evidence collection (phase 6) — automated scripts + compliance platform
-6. prepare for audit (phase 7) — system description, control matrix, interview prep
+**what you can do with this file:** assess a company's current security posture, fix every gap with copy-paste commands, generate customized policies, automate evidence collection, and prepare for audit fieldwork.
+
+---
+
+## how to use this file
+
+### route by task
+
+| situation | start here |
+|-----------|-----------|
+| starting from scratch | section 01 (intake + discovery) |
+| know the gaps, need to fix AWS | section 02 (AWS controls) |
+| fixing GitHub, Okta, Google Workspace, or endpoint gaps | section 03 (platform controls) |
+| writing policies | section 04 (policies with decision logic) |
+| collecting evidence | section 05, part 1 (evidence automation) |
+| integrating a compliance platform (Vanta, Drata, etc.) | section 05, part 2 (platform integration) |
+| preparing for audit | section 05, part 3 (audit prep) |
+| ongoing maintenance | section 05, part 4 (operations) |
+
+### route by cloud provider
+
+| provider | sections to read |
+|----------|-----------------|
+| AWS | 01 (discovery) + 02 (AWS controls) |
+| GCP | 01 (discovery) + 03 has GCP stubs in deprovisioning only; full GCP controls section not yet written |
+| Azure | 01 (discovery) + 03 has Azure stubs in deprovisioning only; full Azure controls section not yet written |
+| multi-cloud | 01 + 02 (AWS) + relevant parts of 03 |
+
+### route by identity provider
+
+| provider | where |
+|----------|-------|
+| Okta | section 03, subsection 3.2 (~line 5670 in assembled file) |
+| Google Workspace | section 03, subsection 3.3 (~line 6414 in assembled file) |
+| neither configured | flag as GAP — section 01 intake will catch this |
+
+---
+
+## table of contents
+
+| section | title | content | lines (assembled) |
+|---------|-------|---------|--------------------|
+| 00 | navigation | this section — overview, routing, TOC | 1-~150 |
+| 01 | discovery & assessment | intake questionnaire, Prowler scan, manual discovery commands, gap report template | ~150-1120 |
+| 02 | AWS security controls | 40+ controls across IAM, CloudTrail, GuardDuty, Config, S3, RDS, VPC, KMS, CloudWatch — each with DISCOVER > FIX > VERIFY > EVIDENCE. includes Terraform module and Config auto-remediation | ~1120-5040 |
+| 03 | platform controls | GitHub (branch protection, secret scanning, Dependabot, Actions security), Okta (MFA, password, session, deprovisioning), Google Workspace, endpoint security (MDM, encryption, EDR), deprovisioning deep dive | ~5040-7630 |
+| 04 | policies with decision logic | 12 policy templates that reference actual discovered infrastructure — not placeholders. includes information security, access control, change management, incident response, and more | ~7630-9610 |
+| 05 | evidence, audit prep & operations | part 1: Steampipe queries + evidence scripts. part 2: compliance platform integration (Vanta, Drata, Secureframe, Sprinto). part 3: system description template, control matrix, auditor interview prep. part 4: annual calendar, change-triggered reassessment, common exceptions. part 5: quick reference tables | ~9610-11810 |
+
+### section 03 subsection index
+
+| subsection | topic | offset in section file |
+|------------|-------|----------------------|
+| 3.1 | GitHub / source control | line 9 |
+| 3.2 | Okta identity provider | line 635 |
+| 3.3 | Google Workspace | line 1378 |
+| 3.4 | endpoint security (MDM, encryption, EDR) | line 1614 |
+| 3.5 | deprovisioning deep dive | line 2175 |
+
+### section 05 part index
+
+| part | topic | offset in section file |
+|------|-------|----------------------|
+| part 1 | evidence collection automation (Steampipe, access review, encryption, change mgmt, backup) | line 7 |
+| part 2 | compliance platform integration (Vanta, Drata, Secureframe, Sprinto, manual) | line 1057 |
+| part 3 | audit preparation (system description, control matrix, interview prep, assertion letter) | line 1446 |
+| part 4 | ongoing operations (annual calendar, change triggers, common exceptions) | line 1912 |
+| part 5 | quick reference tables | line 2106 |
+
+---
+
+## quick reference
+
+five facts before you start:
+
+1. **security is the only mandatory TSC category** — availability, processing integrity, confidentiality, and privacy are optional add-ons
+2. **type II is what buyers expect** — type I (point-in-time) exists but enterprise procurement requires type II (3-12 month observation period)
+3. **#1 audit exception: late deprovisioning** — 68% of qualified opinions cite access not revoked within SLA. section 03.5 covers this in depth
+4. **Prowler is the backbone** — `prowler aws --compliance soc2_aws` scans all AWS controls at once. section 01 covers setup and interpretation
+5. **every control follows DISCOVER > FIX > VERIFY > EVIDENCE** — discover the current state, fix the gap, verify the fix worked, collect evidence for the auditor
+
+---
+
+## prerequisites
+
+what the agent needs before starting:
+
+| requirement | why |
+|-------------|-----|
+| cloud provider credentials (AWS CLI configured, or GCP/Azure equivalents) | discovery and remediation commands need authenticated access |
+| GitHub CLI authenticated (`gh auth login`) | section 03 GitHub controls use `gh api` calls |
+| identity provider API token (Okta API token or Google Workspace admin SDK access) | section 03 identity controls query and configure IdP |
+| Python 3.9+ | Prowler requires Python |
+| Steampipe | section 05 evidence collection queries run on Steampipe |
+| jq | JSON parsing throughout all sections |
+| curl, bash | scripts assume bash with curl available |
+
+### install Prowler (if not already installed)
+
+```bash
+pip install prowler
+prowler aws --list-compliance | grep soc2
+```
+
+### install Steampipe (if not already installed)
+
+```bash
+brew install turbot/tap/steampipe   # macOS
+steampipe plugin install aws
+```
+
+---
+
+## control flow
+
+```
+intake questionnaire (01)
+        |
+        v
+discovery scan: Prowler + manual commands (01)
+        |
+        v
+gap report (01)
+        |
+        v
+fix AWS controls (02)  +  fix platform controls (03)
+        |                          |
+        v                          v
+generate policies from discovered state (04)
+        |
+        v
+automate evidence collection (05, part 1-2)
+        |
+        v
+audit prep: system description + control matrix + interview prep (05, part 3)
+        |
+        v
+ongoing: annual calendar + change triggers (05, part 4)
+```
+
+---
+
+*end of navigation section. proceed to section 01 for discovery.*
+
 
 ---
 
@@ -5033,6 +5170,7932 @@ For high-traffic VPCs (>10GB/day of flow logs), S3 is significantly cheaper. Use
 
 ---
 
+# Section 02: GCP Security Controls
+
+> Full DISCOVER-FIX-VERIFY-EVIDENCE cycle for every SOC 2 control on Google Cloud Platform.
+> Every command is copy-paste ready. Every control maps to a Trust Services Criteria (TSC).
+
+## Prerequisites
+
+```bash
+# Confirm gcloud CLI is configured and working
+gcloud auth list
+gcloud config get-value project
+
+# Set reusable variables used throughout this document
+export PROJECT_ID=$(gcloud config get-value project)
+export ORG_ID=$(gcloud organizations list --format='value(ID)')
+export EVIDENCE_DIR="./soc2-evidence/$(date +%Y-%m-%d)"
+mkdir -p "$EVIDENCE_DIR"
+
+# Verify organization-level access (required for org policies)
+gcloud organizations get-iam-policy "$ORG_ID" --format=json > /dev/null 2>&1 \
+  && echo "PASS: org-level access confirmed" \
+  || echo "WARN: no org-level access -- org policy controls will require elevated permissions"
+
+# Verify required APIs are enabled
+for API in cloudresourcemanager.googleapis.com \
+           iam.googleapis.com \
+           logging.googleapis.com \
+           monitoring.googleapis.com \
+           securitycenter.googleapis.com \
+           sqladmin.googleapis.com \
+           compute.googleapis.com \
+           cloudkms.googleapis.com \
+           storage.googleapis.com; do
+  gcloud services list --enabled --filter="name:$API" --format="value(name)" | grep -q "$API" \
+    && echo "OK: $API" \
+    || echo "MISSING: $API -- enable with: gcloud services enable $API"
+done
+```
+
+---
+
+## Cloud IAM Controls
+
+### 1. Organization Policy Constraints (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List all active organization policies
+gcloud org-policies list --organization="$ORG_ID" \
+  --format="table(constraint,listPolicy.allValues,booleanPolicy.enforced)"
+
+# Check specific critical constraints
+for CONSTRAINT in \
+  constraints/iam.allowedPolicyMemberDomains \
+  constraints/storage.uniformBucketLevelAccess \
+  constraints/storage.publicAccessPrevention \
+  constraints/compute.requireOsLogin \
+  constraints/iam.disableServiceAccountKeyCreation \
+  constraints/compute.vmExternalIpAccess; do
+  echo "=== $CONSTRAINT ==="
+  gcloud org-policies describe "$CONSTRAINT" --organization="$ORG_ID" 2>/dev/null \
+    || echo "NOT SET"
+done
+```
+- PASS: critical constraints are set and enforced
+- FAIL: constraints return "NOT SET" or are not enforced
+
+**FIX** -- remediate if failing:
+```bash
+# Restrict IAM policy members to your domain only
+# Replace DIRECTORY_CUSTOMER_ID with your Cloud Identity customer ID
+# Find it at: https://admin.google.com > Account > Account Settings
+cat > /tmp/allowed-domains-policy.yaml << 'EOF'
+constraint: constraints/iam.allowedPolicyMemberDomains
+listPolicy:
+  allowedValues:
+    - DIRECTORY_CUSTOMER_ID
+EOF
+gcloud org-policies set-policy /tmp/allowed-domains-policy.yaml \
+  --organization="$ORG_ID"
+
+# Enforce uniform bucket-level access (no legacy ACLs)
+cat > /tmp/uniform-bucket-policy.yaml << 'EOF'
+constraint: constraints/storage.uniformBucketLevelAccess
+booleanPolicy:
+  enforced: true
+EOF
+gcloud org-policies set-policy /tmp/uniform-bucket-policy.yaml \
+  --organization="$ORG_ID"
+
+# Enforce public access prevention on storage
+cat > /tmp/public-access-policy.yaml << 'EOF'
+constraint: constraints/storage.publicAccessPrevention
+booleanPolicy:
+  enforced: true
+EOF
+gcloud org-policies set-policy /tmp/public-access-policy.yaml \
+  --organization="$ORG_ID"
+
+# Disable service account key creation (prefer Workload Identity)
+cat > /tmp/disable-sa-keys-policy.yaml << 'EOF'
+constraint: constraints/iam.disableServiceAccountKeyCreation
+booleanPolicy:
+  enforced: true
+EOF
+gcloud org-policies set-policy /tmp/disable-sa-keys-policy.yaml \
+  --organization="$ORG_ID"
+```
+Gotchas:
+- Org policies require `roles/orgpolicy.policyAdmin` at the organization level
+- `iam.allowedPolicyMemberDomains` uses your Cloud Identity customer ID (starts with `C`), not your domain name
+- Policies propagate downward to all folders and projects -- child resources cannot override unless allowed
+- Disabling SA key creation blocks all projects from creating keys -- exempt specific projects via policy overrides if needed
+
+**VERIFY** -- confirm the fix:
+```bash
+for CONSTRAINT in \
+  constraints/iam.allowedPolicyMemberDomains \
+  constraints/storage.uniformBucketLevelAccess \
+  constraints/storage.publicAccessPrevention \
+  constraints/iam.disableServiceAccountKeyCreation; do
+  echo "=== $CONSTRAINT ==="
+  gcloud org-policies describe "$CONSTRAINT" --organization="$ORG_ID"
+done
+# Expected: each constraint shows enforced: true or has allowedValues set
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Organization Policies ==="
+  gcloud org-policies list --organization="$ORG_ID" --format=json
+  echo ""
+  for CONSTRAINT in \
+    constraints/iam.allowedPolicyMemberDomains \
+    constraints/storage.uniformBucketLevelAccess \
+    constraints/storage.publicAccessPrevention \
+    constraints/iam.disableServiceAccountKeyCreation \
+    constraints/compute.requireOsLogin \
+    constraints/compute.vmExternalIpAccess; do
+    echo "=== $CONSTRAINT ==="
+    gcloud org-policies describe "$CONSTRAINT" --organization="$ORG_ID" 2>/dev/null
+  done
+} > "$EVIDENCE_DIR/org-policies-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+### 2. Service Account Audit (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all service accounts in the project
+gcloud iam service-accounts list \
+  --format="table(email,displayName,disabled)"
+
+# Find service accounts with no activity in the last 90 days
+# Requires IAM Recommender API (Policy Analyzer)
+gcloud recommender insights list \
+  --insight-type=google.iam.serviceAccount.Insight \
+  --location=global \
+  --project="$PROJECT_ID" \
+  --format="table(content.email,content.lastAuthenticatedTime,stateInfo.state)" \
+  2>/dev/null || echo "Recommender API not enabled or no insights available"
+
+# List service accounts and check for excessive project-level roles
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:serviceAccount:" \
+  --format="table(bindings.role,bindings.members)"
+```
+- PASS: all service accounts are active and have least-privilege roles
+- FAIL: service accounts with no recent activity, or with `roles/owner` or `roles/editor`
+
+**FIX** -- remediate if failing:
+```bash
+# Disable unused service account (reversible -- safer than deletion)
+SA_EMAIL="unused-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud iam service-accounts disable "$SA_EMAIL"
+
+# Remove overly permissive role and replace with specific role
+gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/editor"
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/storage.objectViewer"
+
+# Delete a service account (irreversible after 30-day recovery window)
+# gcloud iam service-accounts delete "$SA_EMAIL"
+```
+Gotchas:
+- Disabling is reversible; deletion is permanent after the 30-day undelete window
+- Default service accounts (Compute Engine, App Engine) should be disabled if not used, but some services depend on them
+- The IAM Recommender takes 90+ days of activity data before it can make recommendations
+- Service accounts created by Google-managed services (agent service accounts) should not be modified
+
+**VERIFY** -- confirm the fix:
+```bash
+# Check the service account is disabled
+gcloud iam service-accounts describe "$SA_EMAIL" \
+  --format="value(disabled)"
+# Expected: True
+
+# Check role bindings
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:$SA_EMAIL" \
+  --format="table(bindings.role)"
+# Expected: only least-privilege roles, no roles/owner or roles/editor
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Service Accounts ==="
+  gcloud iam service-accounts list --format=json
+
+  echo ""
+  echo "=== Service Account IAM Bindings ==="
+  gcloud projects get-iam-policy "$PROJECT_ID" \
+    --flatten="bindings[].members" \
+    --filter="bindings.members:serviceAccount:" \
+    --format=json
+
+  echo ""
+  echo "=== IAM Recommender Insights ==="
+  gcloud recommender insights list \
+    --insight-type=google.iam.serviceAccount.Insight \
+    --location=global \
+    --project="$PROJECT_ID" \
+    --format=json 2>/dev/null || echo "No insights available"
+} > "$EVIDENCE_DIR/service-accounts-audit-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 3. Service Account Key Rotation (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Find all user-managed service account keys and their ages
+for SA in $(gcloud iam service-accounts list --format="value(email)"); do
+  KEYS=$(gcloud iam service-accounts keys list \
+    --iam-account="$SA" \
+    --managed-by=user \
+    --format="csv[no-heading](name.basename(),validAfterTime)")
+  if [ -n "$KEYS" ]; then
+    echo "=== $SA ==="
+    while IFS=',' read -r KEY_ID CREATED; do
+      CREATED_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$CREATED" +%s 2>/dev/null \
+        || date -d "$CREATED" +%s 2>/dev/null)
+      NOW_EPOCH=$(date +%s)
+      AGE_DAYS=$(( (NOW_EPOCH - CREATED_EPOCH) / 86400 ))
+      if [ "$AGE_DAYS" -gt 90 ]; then
+        echo "  FAIL: key=$KEY_ID age=${AGE_DAYS}d (>90 days)"
+      else
+        echo "  OK:   key=$KEY_ID age=${AGE_DAYS}d"
+      fi
+    done <<< "$KEYS"
+  fi
+done
+```
+- PASS: no keys older than 90 days (or ideally no user-managed keys at all)
+- FAIL: keys with age >90 days listed
+
+**FIX** -- remediate if failing:
+```bash
+SA_EMAIL="my-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+
+# Step 1: Create new key
+gcloud iam service-accounts keys create /tmp/new-sa-key.json \
+  --iam-account="$SA_EMAIL"
+echo "New key created. Update all systems using this service account."
+
+# Step 2: Update all systems with the new key file
+# (deployment-specific -- update secrets manager, k8s secrets, etc.)
+
+# Step 3: Delete old key after confirming new key works
+OLD_KEY_ID="abc123def456"
+gcloud iam service-accounts keys delete "$OLD_KEY_ID" \
+  --iam-account="$SA_EMAIL" --quiet
+```
+Gotchas:
+- The best fix is to eliminate user-managed keys entirely -- use Workload Identity Federation instead (see control 5)
+- New key JSON contains the private key -- store it in Secret Manager, not on disk
+- Key deletion is immediate and irreversible -- confirm the new key works in all systems first
+- If the org policy `iam.disableServiceAccountKeyCreation` is enforced, you must use Workload Identity instead
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud iam service-accounts keys list \
+  --iam-account="$SA_EMAIL" \
+  --managed-by=user \
+  --format="table(name.basename(),validAfterTime,validBeforeTime)"
+# Expected: only keys created recently, or no user-managed keys at all
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Service Account Keys Audit ==="
+  for SA in $(gcloud iam service-accounts list --format="value(email)"); do
+    echo "--- $SA ---"
+    gcloud iam service-accounts keys list \
+      --iam-account="$SA" \
+      --managed-by=user \
+      --format=json 2>/dev/null
+  done
+} > "$EVIDENCE_DIR/sa-key-rotation-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 4. IAM Policy Audit (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Find overly permissive project-level bindings
+# Look for roles/owner, roles/editor, or roles/viewer on broad scopes
+echo "=== Overly Permissive Project Bindings ==="
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[]" \
+  --filter="bindings.role:(roles/owner OR roles/editor)" \
+  --format="table(bindings.role,bindings.members)"
+
+echo ""
+echo "=== allUsers / allAuthenticatedUsers Bindings ==="
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:(allUsers OR allAuthenticatedUsers)" \
+  --format="table(bindings.role,bindings.members)"
+
+echo ""
+echo "=== Organization-Level Overly Permissive Bindings ==="
+gcloud organizations get-iam-policy "$ORG_ID" \
+  --flatten="bindings[]" \
+  --filter="bindings.role:(roles/owner OR roles/editor)" \
+  --format="table(bindings.role,bindings.members)" 2>/dev/null \
+  || echo "No org-level access to check"
+```
+- PASS: no `allUsers`/`allAuthenticatedUsers` bindings; `roles/owner` only on break-glass accounts; `roles/editor` is minimized
+- FAIL: broad roles on service accounts, `allUsers` has any binding, or `roles/editor` is widely used
+
+**FIX** -- remediate if failing:
+```bash
+# Remove allUsers binding
+gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+  --member="allUsers" \
+  --role="roles/storage.objectViewer"
+
+# Replace roles/editor with specific roles
+MEMBER="user:dev@example.com"
+gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+  --member="$MEMBER" \
+  --role="roles/editor"
+
+# Grant specific roles instead
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="$MEMBER" \
+  --role="roles/compute.admin"
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="$MEMBER" \
+  --role="roles/storage.admin"
+
+# Use IAM Recommender to find role reduction suggestions
+gcloud recommender recommendations list \
+  --recommender=google.iam.policy.Recommender \
+  --location=global \
+  --project="$PROJECT_ID" \
+  --format="table(content.overview.member,content.overview.removedRole,content.overview.addedRoles)"
+```
+Gotchas:
+- Removing `roles/editor` can break CI/CD pipelines -- audit which services rely on it first
+- Use IAM Recommender suggestions as a starting point, but verify each one manually
+- `roles/owner` should only be held by 2-3 break-glass admin accounts, never service accounts
+- IAM changes take up to 60 seconds to propagate
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify no allUsers/allAuthenticatedUsers bindings
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:(allUsers OR allAuthenticatedUsers)" \
+  --format="table(bindings.role,bindings.members)"
+# Expected: no output
+
+# Verify roles/editor usage is minimized
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[]" \
+  --filter="bindings.role:roles/editor" \
+  --format="table(bindings.members)"
+# Expected: empty or only known exceptions
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Full Project IAM Policy ==="
+  gcloud projects get-iam-policy "$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== IAM Recommender Recommendations ==="
+  gcloud recommender recommendations list \
+    --recommender=google.iam.policy.Recommender \
+    --location=global \
+    --project="$PROJECT_ID" \
+    --format=json 2>/dev/null || echo "No recommendations"
+} > "$EVIDENCE_DIR/iam-policy-audit-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 5. Workload Identity Federation (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if Workload Identity pools exist
+gcloud iam workload-identity-pools list \
+  --location="global" \
+  --project="$PROJECT_ID" \
+  --format="table(name,state,displayName)"
+
+# Count user-managed service account keys (should be zero if using WIF)
+TOTAL_USER_KEYS=0
+for SA in $(gcloud iam service-accounts list --format="value(email)"); do
+  COUNT=$(gcloud iam service-accounts keys list \
+    --iam-account="$SA" \
+    --managed-by=user \
+    --format="value(name)" | wc -l)
+  TOTAL_USER_KEYS=$((TOTAL_USER_KEYS + COUNT))
+done
+echo "Total user-managed SA keys: $TOTAL_USER_KEYS"
+```
+- PASS: Workload Identity pools exist and user-managed keys count is 0
+- FAIL: no WIF pools, or user-managed keys still in use
+
+**FIX** -- remediate if failing:
+```bash
+# Example: Set up Workload Identity Federation for GitHub Actions
+POOL_NAME="github-pool"
+PROVIDER_NAME="github-provider"
+SA_EMAIL="github-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
+GITHUB_ORG="your-org"
+GITHUB_REPO="your-repo"
+
+# Create workload identity pool
+gcloud iam workload-identity-pools create "$POOL_NAME" \
+  --location="global" \
+  --display-name="GitHub Actions Pool"
+
+# Create OIDC provider for GitHub
+gcloud iam workload-identity-pools providers create-oidc "$PROVIDER_NAME" \
+  --location="global" \
+  --workload-identity-pool="$POOL_NAME" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --attribute-condition="assertion.repository=='${GITHUB_ORG}/${GITHUB_REPO}'"
+
+# Allow the GitHub repo to impersonate the service account
+POOL_ID=$(gcloud iam workload-identity-pools describe "$POOL_NAME" \
+  --location="global" --format="value(name)")
+
+gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/${POOL_ID}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}"
+
+# After confirming WIF works, delete the old SA key
+# gcloud iam service-accounts keys delete OLD_KEY_ID --iam-account="$SA_EMAIL" --quiet
+```
+Gotchas:
+- WIF eliminates long-lived service account keys -- this is the single biggest security improvement for CI/CD
+- The `attribute-condition` is critical -- without it, any GitHub repo could impersonate the SA
+- Supported OIDC providers: GitHub Actions, GitLab CI, AWS, Azure AD, any OIDC-compliant IdP
+- For GKE workloads, use GKE Workload Identity (different from WIF but same concept)
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify the pool and provider exist
+gcloud iam workload-identity-pools providers describe "$PROVIDER_NAME" \
+  --location="global" \
+  --workload-identity-pool="$POOL_NAME" \
+  --format="yaml(name,state,attributeCondition,issuerUri)"
+# Expected: state: ACTIVE, correct issuerUri and attributeCondition
+
+# Verify service account binding
+gcloud iam service-accounts get-iam-policy "$SA_EMAIL" \
+  --format=json
+# Expected: binding with roles/iam.workloadIdentityUser for the pool principal
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Workload Identity Pools ==="
+  gcloud iam workload-identity-pools list --location="global" --format=json
+
+  echo ""
+  echo "=== Pool Providers ==="
+  for POOL in $(gcloud iam workload-identity-pools list --location="global" --format="value(name.basename())"); do
+    echo "--- Pool: $POOL ---"
+    gcloud iam workload-identity-pools providers list \
+      --location="global" \
+      --workload-identity-pool="$POOL" \
+      --format=json
+  done
+
+  echo ""
+  echo "=== User-Managed Key Count ==="
+  for SA in $(gcloud iam service-accounts list --format="value(email)"); do
+    COUNT=$(gcloud iam service-accounts keys list --iam-account="$SA" --managed-by=user --format="value(name)" | wc -l)
+    echo "$SA: $COUNT user-managed keys"
+  done
+} > "$EVIDENCE_DIR/workload-identity-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 6. Cloud Identity MFA / 2-Step Verification (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# 2SV enforcement is managed via Google Admin Console (admin.google.com),
+# not gcloud CLI. However, you can check the org policy for context:
+gcloud org-policies describe constraints/iam.allowedPolicyMemberDomains \
+  --organization="$ORG_ID" 2>/dev/null
+
+# Check if Cloud Identity users exist (indicates managed identities)
+gcloud identity groups list --organization="$ORG_ID" \
+  --format="table(displayName,groupKey.id)" 2>/dev/null \
+  || echo "Cloud Identity Groups API not available -- check Admin Console"
+```
+- PASS: 2SV is enforced at the organizational unit level in Admin Console
+- FAIL: 2SV is optional or not configured
+
+**FIX** -- remediate if failing:
+```
+2SV enforcement cannot be done via gcloud CLI. You must use Google Admin Console:
+
+1. Go to https://admin.google.com
+2. Navigate to Security > Authentication > 2-step verification
+3. Check "Allow users to turn on 2-Step Verification"
+4. Set enforcement: "On" for the target organizational unit
+5. Set enrollment period: give users 1-2 weeks to set up
+6. Set allowed methods: Security keys preferred, authenticator apps acceptable
+7. New user enrollment period: 1 day (require 2SV immediately for new accounts)
+
+For highest assurance:
+- Require security keys (phishing-resistant)
+- Disable SMS and voice call options
+- Set "Enforcement date" to enforce after enrollment period
+```
+Gotchas:
+- Cloud Identity is separate from Google Workspace -- both require 2SV configuration
+- If using external IdP (Okta, Azure AD), 2SV is managed in the IdP, not Google Admin
+- Super admins can bypass 2SV temporarily -- configure backup codes for break-glass
+- 2SV enforcement applies to Google Workspace / Cloud Identity users only -- federated users authenticate via their IdP
+
+**VERIFY** -- confirm the fix:
+```
+Verification must be done via Admin Console:
+
+1. Go to https://admin.google.com > Reports > User reports > 2-Step Verification
+2. Verify "Enrollment" shows 100% (or near 100% with known exceptions)
+3. Verify "Enforcement" shows "Enforced" for all organizational units
+
+Alternatively, use the Admin SDK Directory API:
+```
+```bash
+# If you have Admin SDK access, list users and check 2SV enrollment
+# This requires the Admin SDK API and appropriate scopes
+# gcloud auth application-default login --scopes="https://www.googleapis.com/auth/admin.directory.user.readonly"
+# Then query: GET https://admin.googleapis.com/admin/directory/v1/users?domain=yourdomain.com&projection=full
+# Check each user's isEnforcedIn2Sv and isEnrolledIn2Sv fields
+echo "2SV verification requires Admin Console access -- see instructions above"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== 2SV Evidence ==="
+  echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo ""
+  echo "2SV enforcement is configured via Google Admin Console."
+  echo "Export the 2-Step Verification report from:"
+  echo "  https://admin.google.com > Reports > User reports > 2-Step Verification"
+  echo ""
+  echo "=== Domain Restriction Policy ==="
+  gcloud org-policies describe constraints/iam.allowedPolicyMemberDomains \
+    --organization="$ORG_ID" 2>/dev/null || echo "Not set"
+  echo ""
+  echo "=== Cloud Identity Groups ==="
+  gcloud identity groups list --organization="$ORG_ID" --format=json 2>/dev/null \
+    || echo "Requires Cloud Identity Groups API"
+} > "$EVIDENCE_DIR/2sv-enforcement-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+## Cloud Audit Logs Controls
+
+### 7. Admin Activity Logs (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Admin Activity logs are always on and cannot be disabled.
+# Verify they are working by querying recent admin activity:
+gcloud logging read \
+  'logName:"cloudaudit.googleapis.com%2Factivity"' \
+  --project="$PROJECT_ID" \
+  --limit=5 \
+  --format="table(timestamp,protoPayload.methodName,protoPayload.authenticationInfo.principalEmail)"
+```
+- PASS: returns recent admin activity entries
+- FAIL: no entries (indicates a configuration or access issue -- admin logs are always on)
+
+**FIX** -- remediate if failing:
+```
+Admin Activity audit logs are ALWAYS enabled and cannot be disabled or configured.
+They are retained for 400 days at no charge.
+
+If no logs appear, check:
+1. The project has had admin activity (IAM changes, resource creation, etc.)
+2. You have roles/logging.viewer or equivalent permission
+3. The project ID is correct: gcloud config get-value project
+```
+Gotchas:
+- Admin Activity logs are free and always on -- no action needed to enable
+- Retention is 400 days by default (not configurable in Cloud Logging)
+- For retention beyond 400 days, configure a log sink (see control 9)
+- Admin Activity logs cover create/delete/update operations on resources and IAM policy changes
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify logs are flowing
+gcloud logging read \
+  'logName:"cloudaudit.googleapis.com%2Factivity"' \
+  --project="$PROJECT_ID" \
+  --limit=1 \
+  --format="value(timestamp)"
+# Expected: a recent timestamp
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+gcloud logging read \
+  'logName:"cloudaudit.googleapis.com%2Factivity"' \
+  --project="$PROJECT_ID" \
+  --limit=50 \
+  --format=json \
+  > "$EVIDENCE_DIR/admin-activity-logs-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 8. Data Access Logs (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Data Access logs must be explicitly enabled per service.
+# Check the project's audit log configuration:
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs // "NOT CONFIGURED"'
+```
+- PASS: `auditConfigs` array contains entries for `allServices` or specific services with `DATA_READ`, `DATA_WRITE`, and `ADMIN_READ` log types
+- FAIL: `auditConfigs` is null, empty, or missing critical services
+
+**FIX** -- remediate if failing:
+```bash
+# Get current IAM policy
+gcloud projects get-iam-policy "$PROJECT_ID" --format=json > /tmp/project-policy.json
+
+# Add audit config to enable Data Access logs for all services
+# Use jq to merge the audit config into the existing policy
+jq '.auditConfigs = [
+  {
+    "service": "allServices",
+    "auditLogConfigs": [
+      {"logType": "ADMIN_READ"},
+      {"logType": "DATA_READ"},
+      {"logType": "DATA_WRITE"}
+    ]
+  }
+]' /tmp/project-policy.json > /tmp/project-policy-updated.json
+
+gcloud projects set-iam-policy "$PROJECT_ID" /tmp/project-policy-updated.json
+```
+Gotchas:
+- Data Access logs are NOT enabled by default -- this is the most commonly missed SOC 2 control on GCP
+- Enabling for `allServices` is the safest approach for compliance, but can generate significant log volume
+- Data Access logs can be expensive -- BigQuery and Cloud Storage data reads can generate millions of log entries
+- To reduce cost, enable selectively for critical services: IAM, Cloud SQL, Cloud KMS, Secret Manager
+- Exempted members (e.g., automated monitoring service accounts) can be specified per service to reduce noise
+- Changes to audit config require `roles/resourcemanager.projectIamAdmin`
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs'
+# Expected: array with allServices entry containing DATA_READ, DATA_WRITE, ADMIN_READ
+
+# Verify logs are flowing (may take a few minutes after enabling)
+gcloud logging read \
+  'logName:"cloudaudit.googleapis.com%2Fdata_access"' \
+  --project="$PROJECT_ID" \
+  --limit=5 \
+  --format="table(timestamp,protoPayload.methodName,protoPayload.authenticationInfo.principalEmail)"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Data Access Audit Configuration ==="
+  gcloud projects get-iam-policy "$PROJECT_ID" \
+    --format=json | jq '.auditConfigs'
+
+  echo ""
+  echo "=== Recent Data Access Log Entries ==="
+  gcloud logging read \
+    'logName:"cloudaudit.googleapis.com%2Fdata_access"' \
+    --project="$PROJECT_ID" \
+    --limit=25 \
+    --format=json
+} > "$EVIDENCE_DIR/data-access-logs-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 9. Log Sinks (TSC: CC7.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+# List all log sinks in the project
+gcloud logging sinks list --project="$PROJECT_ID" \
+  --format="table(name,destination,filter,writerIdentity)"
+
+# Check for organization-level sinks
+gcloud logging sinks list --organization="$ORG_ID" \
+  --format="table(name,destination,filter)" 2>/dev/null \
+  || echo "No org-level access"
+```
+- PASS: at least one sink exists that exports audit logs to Cloud Storage or BigQuery for long-term retention
+- FAIL: no sinks, or sinks do not cover audit logs
+
+**FIX** -- remediate if failing:
+```bash
+# Create a Cloud Storage bucket for log retention
+LOGS_BUCKET="gs://${PROJECT_ID}-audit-logs"
+gcloud storage buckets create "$LOGS_BUCKET" \
+  --location=us \
+  --uniform-bucket-level-access \
+  --public-access-prevention
+
+# Create a log sink to export all audit logs to the bucket
+gcloud logging sinks create audit-log-archive \
+  --project="$PROJECT_ID" \
+  --destination="storage.googleapis.com/${PROJECT_ID}-audit-logs" \
+  --log-filter='logName:"cloudaudit.googleapis.com"'
+
+# Get the sink's writer identity and grant it access to the bucket
+WRITER_IDENTITY=$(gcloud logging sinks describe audit-log-archive \
+  --project="$PROJECT_ID" \
+  --format="value(writerIdentity)")
+
+gcloud storage buckets add-iam-policy-binding "$LOGS_BUCKET" \
+  --member="$WRITER_IDENTITY" \
+  --role="roles/storage.objectCreator"
+
+# Alternative: export to BigQuery for queryable log archive
+# gcloud logging sinks create audit-log-bq \
+#   --project="$PROJECT_ID" \
+#   --destination="bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/audit_logs" \
+#   --log-filter='logName:"cloudaudit.googleapis.com"'
+```
+Gotchas:
+- The sink's writer identity (a service account) needs write permission on the destination
+- Sinks only export logs generated AFTER creation -- they do not backfill
+- For compliance, create sinks at the organization level to capture all projects
+- BigQuery destinations allow querying with SQL; Cloud Storage is cheaper for archival
+- If the destination bucket is in a different project, grant the writer identity cross-project access
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud logging sinks describe audit-log-archive \
+  --project="$PROJECT_ID" \
+  --format="yaml(name,destination,filter,writerIdentity)"
+# Expected: destination points to your log bucket, filter covers audit logs
+
+# Check that logs are arriving (may take a few minutes)
+gcloud storage ls "${LOGS_BUCKET}/" --recursive 2>/dev/null | head -5
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Log Sinks ==="
+  gcloud logging sinks list --project="$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== Sink Details ==="
+  for SINK in $(gcloud logging sinks list --project="$PROJECT_ID" --format="value(name)"); do
+    echo "--- $SINK ---"
+    gcloud logging sinks describe "$SINK" --project="$PROJECT_ID" --format=json
+  done
+
+  echo ""
+  echo "=== Destination Bucket Lifecycle ==="
+  gcloud storage buckets describe "$LOGS_BUCKET" --format=json 2>/dev/null || echo "N/A"
+} > "$EVIDENCE_DIR/log-sinks-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 10. Log Retention (TSC: CC7.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check Cloud Logging retention settings for log buckets
+gcloud logging buckets list --project="$PROJECT_ID" \
+  --format="table(name,retentionDays,locked,lifecycleState)"
+
+# Check the _Default and _Required bucket retention
+gcloud logging buckets describe _Default \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --format="yaml(retentionDays,locked)"
+
+gcloud logging buckets describe _Required \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --format="yaml(retentionDays,locked)"
+
+# Check if a Cloud Storage sink bucket has lifecycle/retention policies
+# (for logs exported via sinks)
+LOGS_BUCKET="gs://${PROJECT_ID}-audit-logs"
+gcloud storage buckets describe "$LOGS_BUCKET" \
+  --format="json(retentionPolicy,lifecycle)" 2>/dev/null \
+  || echo "Log archive bucket not found"
+```
+- PASS: `_Default` bucket retention >= 365 days, or a sink exports to a bucket with 365+ day retention
+- FAIL: `_Default` retention is 30 days (the default) and no long-term sink exists
+
+**FIX** -- remediate if failing:
+```bash
+# Option A: Increase Cloud Logging bucket retention (up to 3650 days)
+# WARNING: Increasing retention increases Cloud Logging storage costs
+gcloud logging buckets update _Default \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --retention-days=365
+
+# Option B (recommended): Keep _Default at 30 days, rely on sink to Cloud Storage
+# Set a retention policy on the Cloud Storage bucket
+LOGS_BUCKET="gs://${PROJECT_ID}-audit-logs"
+gcloud storage buckets update "$LOGS_BUCKET" \
+  --retention-period=365d
+
+# Lock the retention policy (makes it immutable -- cannot be shortened)
+# WARNING: This is IRREVERSIBLE. Only do this when you are certain.
+# gcloud storage buckets update "$LOGS_BUCKET" --lock-retention-period
+
+# Set lifecycle rules for cost optimization
+cat > /tmp/lifecycle-rules.json << 'EOF'
+{
+  "lifecycle": {
+    "rule": [
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "NEARLINE"},
+        "condition": {"age": 90}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "COLDLINE"},
+        "condition": {"age": 365}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "ARCHIVE"},
+        "condition": {"age": 730}
+      }
+    ]
+  }
+}
+EOF
+gcloud storage buckets update "$LOGS_BUCKET" \
+  --lifecycle-file=/tmp/lifecycle-rules.json
+```
+Gotchas:
+- `_Required` bucket (Admin Activity, System Event logs) has 400-day retention and cannot be changed
+- `_Default` bucket defaults to 30 days -- this is where Data Access logs go
+- Increasing `_Default` retention is simpler but more expensive than using a sink + Cloud Storage
+- Locking a Cloud Storage retention policy is irreversible -- you cannot delete the bucket until all objects age out
+- SOC 2 typically requires 365 days minimum; some auditors accept 365 days in Cloud Storage with lifecycle tiering
+
+**VERIFY** -- confirm the fix:
+```bash
+echo "=== Cloud Logging Buckets ==="
+gcloud logging buckets list --project="$PROJECT_ID" \
+  --format="table(name,retentionDays,locked)"
+
+echo ""
+echo "=== Cloud Storage Retention ==="
+gcloud storage buckets describe "$LOGS_BUCKET" \
+  --format="json(retentionPolicy,lifecycle)" 2>/dev/null
+# Expected: retentionDays >= 365 on _Default, or retentionPolicy on the storage bucket
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud Logging Bucket Retention ==="
+  gcloud logging buckets list --project="$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== _Default Bucket Details ==="
+  gcloud logging buckets describe _Default \
+    --project="$PROJECT_ID" --location=global --format=json
+
+  echo ""
+  echo "=== _Required Bucket Details ==="
+  gcloud logging buckets describe _Required \
+    --project="$PROJECT_ID" --location=global --format=json
+
+  echo ""
+  echo "=== Log Archive Bucket Retention + Lifecycle ==="
+  gcloud storage buckets describe "gs://${PROJECT_ID}-audit-logs" --format=json 2>/dev/null \
+    || echo "No separate archive bucket"
+} > "$EVIDENCE_DIR/log-retention-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 11. Log-Based Alerts (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List existing log-based metrics
+gcloud logging metrics list --project="$PROJECT_ID" \
+  --format="table(name,filter)"
+
+# List existing alerting policies
+gcloud alpha monitoring policies list --project="$PROJECT_ID" \
+  --format="table(displayName,enabled,conditions.displayName)" 2>/dev/null \
+  || echo "Use: gcloud monitoring policies list (if available)"
+
+# Check for critical alerts that should exist:
+echo ""
+echo "=== Checking for expected log-based metrics ==="
+for METRIC in iam-policy-changes sa-key-creation admin-activity-changes \
+              permission-grants firewall-changes; do
+  gcloud logging metrics describe "$METRIC" --project="$PROJECT_ID" 2>/dev/null \
+    && echo "FOUND: $METRIC" \
+    || echo "MISSING: $METRIC"
+done
+```
+- PASS: log-based metrics exist for IAM changes, SA key creation, permission grants, and firewall changes, with corresponding alerting policies
+- FAIL: no log-based metrics or alerts configured
+
+**FIX** -- remediate if failing:
+```bash
+# Create log-based metric: IAM policy changes
+gcloud logging metrics create iam-policy-changes \
+  --project="$PROJECT_ID" \
+  --description="IAM policy changes on the project" \
+  --log-filter='protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName="SetOrgPolicy"'
+
+# Create log-based metric: Service account key creation
+gcloud logging metrics create sa-key-creation \
+  --project="$PROJECT_ID" \
+  --description="Service account key creation events" \
+  --log-filter='protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"'
+
+# Create log-based metric: Permission/role grants
+gcloud logging metrics create permission-grants \
+  --project="$PROJECT_ID" \
+  --description="Role or permission grants" \
+  --log-filter='protoPayload.methodName="SetIamPolicy" AND protoPayload.serviceData.policyDelta.bindingDeltas.action="ADD"'
+
+# Create log-based metric: Firewall rule changes
+gcloud logging metrics create firewall-changes \
+  --project="$PROJECT_ID" \
+  --description="VPC firewall rule modifications" \
+  --log-filter='resource.type="gce_firewall_rule" AND (protoPayload.methodName:"compute.firewalls.insert" OR protoPayload.methodName:"compute.firewalls.update" OR protoPayload.methodName:"compute.firewalls.delete" OR protoPayload.methodName:"compute.firewalls.patch")'
+
+# Create log-based metric: Custom role changes
+gcloud logging metrics create custom-role-changes \
+  --project="$PROJECT_ID" \
+  --description="Custom IAM role creation or modification" \
+  --log-filter='resource.type="iam_role" AND (protoPayload.methodName:"CreateRole" OR protoPayload.methodName:"UpdateRole" OR protoPayload.methodName:"DeleteRole")'
+
+# Create notification channel (email)
+CHANNEL_ID=$(gcloud alpha monitoring channels create \
+  --display-name="Security Team Email" \
+  --type=email \
+  --channel-labels="email_address=security@example.com" \
+  --project="$PROJECT_ID" \
+  --format="value(name.basename())" 2>/dev/null)
+echo "Notification channel created: $CHANNEL_ID"
+
+# Create alerting policy for IAM policy changes
+cat > /tmp/iam-alert-policy.json << EOF
+{
+  "displayName": "IAM Policy Change Alert",
+  "conditions": [
+    {
+      "displayName": "IAM policy change detected",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/iam-policy-changes\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["projects/${PROJECT_ID}/notificationChannels/${CHANNEL_ID}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/iam-alert-policy.json \
+  --project="$PROJECT_ID"
+
+# Create alerting policy for SA key creation
+cat > /tmp/sa-key-alert-policy.json << EOF
+{
+  "displayName": "Service Account Key Creation Alert",
+  "conditions": [
+    {
+      "displayName": "SA key created",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/sa-key-creation\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["projects/${PROJECT_ID}/notificationChannels/${CHANNEL_ID}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/sa-key-alert-policy.json \
+  --project="$PROJECT_ID"
+
+# Create alerting policy for firewall changes
+cat > /tmp/firewall-alert-policy.json << EOF
+{
+  "displayName": "Firewall Rule Change Alert",
+  "conditions": [
+    {
+      "displayName": "Firewall rule changed",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/firewall-changes\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["projects/${PROJECT_ID}/notificationChannels/${CHANNEL_ID}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/firewall-alert-policy.json \
+  --project="$PROJECT_ID"
+```
+Gotchas:
+- Log-based metrics only count events AFTER the metric is created -- no backfill
+- Alerting policies require at least one notification channel
+- `gcloud alpha monitoring` commands may change -- verify with `gcloud alpha monitoring --help`
+- For production, use Terraform to manage alerting policies (see Terraform section)
+- Consider PagerDuty or Slack integration for faster incident response
+
+**VERIFY** -- confirm the fix:
+```bash
+echo "=== Log-Based Metrics ==="
+gcloud logging metrics list --project="$PROJECT_ID" \
+  --format="table(name,filter)"
+
+echo ""
+echo "=== Alerting Policies ==="
+gcloud alpha monitoring policies list --project="$PROJECT_ID" \
+  --format="table(displayName,enabled)" 2>/dev/null
+
+echo ""
+echo "=== Notification Channels ==="
+gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --format="table(displayName,type)" 2>/dev/null
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Log-Based Metrics ==="
+  gcloud logging metrics list --project="$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== Alerting Policies ==="
+  gcloud alpha monitoring policies list --project="$PROJECT_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Notification Channels ==="
+  gcloud alpha monitoring channels list --project="$PROJECT_ID" --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/log-based-alerts-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Security Command Center Controls
+
+### 12. Enable Security Command Center (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if SCC is enabled (requires organization-level access)
+gcloud scc settings describe \
+  --organization="$ORG_ID" \
+  --format="yaml(name,serviceEnablementState)" 2>/dev/null \
+  || echo "SCC not accessible -- may not be enabled or insufficient permissions"
+
+# Check SCC sources (detectors)
+gcloud scc sources list --organization="$ORG_ID" \
+  --format="table(name,displayName)" 2>/dev/null \
+  || echo "Cannot list SCC sources"
+```
+- PASS: SCC is enabled at organization level with sources listed
+- FAIL: SCC not enabled or not accessible
+
+**FIX** -- remediate if failing:
+```
+Security Command Center enablement requires organization-level access and is done
+via the Google Cloud Console:
+
+1. Go to https://console.cloud.google.com/security/command-center
+2. Select your organization
+3. Choose tier:
+   - Standard (free): Security Health Analytics, Web Security Scanner, basic findings
+   - Premium (paid): All Standard features + Event Threat Detection, Container Threat
+     Detection, Virtual Machine Threat Detection, Rapid Vulnerability Detection
+4. Enable for the entire organization
+5. Grant the SCC service account access to scan resources
+
+For SOC 2, Standard tier covers most requirements. Premium adds runtime threat
+detection which auditors increasingly expect.
+
+After enabling via Console, verify via CLI:
+```
+```bash
+# Verify SCC is operational by listing recent findings
+gcloud scc findings list "$ORG_ID" \
+  --source="-" \
+  --filter="state=\"ACTIVE\"" \
+  --limit=10 \
+  --format="table(finding.category,finding.severity,finding.resourceName)" 2>/dev/null
+```
+Gotchas:
+- SCC is an organization-level service -- it cannot be enabled per-project
+- Standard tier is free; Premium tier costs per resource per month
+- SCC Premium includes Event Threat Detection (similar to AWS GuardDuty)
+- Initial scan may take several hours to complete
+- SCC requires the Security Center API: `gcloud services enable securitycenter.googleapis.com`
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify SCC is working by checking for findings
+gcloud scc findings list "$ORG_ID" \
+  --source="-" \
+  --filter="state=\"ACTIVE\"" \
+  --limit=5 \
+  --format="table(finding.category,finding.severity)"
+# Expected: findings listed (even if severity is LOW -- that means SCC is scanning)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== SCC Sources ==="
+  gcloud scc sources list --organization="$ORG_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Active Findings Summary ==="
+  gcloud scc findings list "$ORG_ID" \
+    --source="-" \
+    --filter="state=\"ACTIVE\"" \
+    --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Findings by Severity ==="
+  for SEV in CRITICAL HIGH MEDIUM LOW; do
+    COUNT=$(gcloud scc findings list "$ORG_ID" \
+      --source="-" \
+      --filter="state=\"ACTIVE\" AND finding.severity=\"$SEV\"" \
+      --format="value(finding.name)" 2>/dev/null | wc -l)
+    echo "$SEV: $COUNT findings"
+  done
+} > "$EVIDENCE_DIR/scc-status-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 13. Review SCC Findings (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# List active findings grouped by category and severity
+echo "=== CRITICAL Findings ==="
+gcloud scc findings list "$ORG_ID" \
+  --source="-" \
+  --filter="state=\"ACTIVE\" AND finding.severity=\"CRITICAL\"" \
+  --format="table(finding.category,finding.resourceName,finding.createTime)" 2>/dev/null
+
+echo ""
+echo "=== HIGH Severity Findings ==="
+gcloud scc findings list "$ORG_ID" \
+  --source="-" \
+  --filter="state=\"ACTIVE\" AND finding.severity=\"HIGH\"" \
+  --format="table(finding.category,finding.resourceName,finding.createTime)" 2>/dev/null
+
+echo ""
+echo "=== Finding Categories Summary ==="
+gcloud scc findings list "$ORG_ID" \
+  --source="-" \
+  --filter="state=\"ACTIVE\"" \
+  --format="value(finding.category)" 2>/dev/null | sort | uniq -c | sort -rn
+```
+- PASS: no CRITICAL findings, HIGH findings are tracked and being remediated
+- FAIL: unreviewed CRITICAL or HIGH findings
+
+**FIX** -- remediate if failing:
+```bash
+# Common SCC findings and their remediations:
+
+# PUBLIC_BUCKET_ACL -- a bucket allows public access
+# Fix: remove public access (see control 16)
+
+# OPEN_FIREWALL -- firewall rule allows 0.0.0.0/0
+# Fix: restrict firewall rule (see control 28)
+
+# MFA_NOT_ENFORCED -- 2SV not enforced for users
+# Fix: enforce 2SV in Admin Console (see control 6)
+
+# SA_KEY_NOT_ROTATED -- service account key older than 90 days
+# Fix: rotate key (see control 3) or migrate to WIF (see control 5)
+
+# To mark a finding as remediated after fixing:
+FINDING_NAME="organizations/$ORG_ID/sources/SOURCE_ID/findings/FINDING_ID"
+gcloud scc findings update "$FINDING_NAME" \
+  --organization="$ORG_ID" \
+  --state="INACTIVE"
+
+# To mute a finding (acknowledged but accepted risk):
+gcloud scc findings update "$FINDING_NAME" \
+  --organization="$ORG_ID" \
+  --mute="MUTED"
+```
+Gotchas:
+- SCC findings auto-resolve when the underlying misconfiguration is fixed (for Security Health Analytics)
+- Event Threat Detection findings (Premium) do not auto-resolve -- they must be manually triaged
+- Muting a finding hides it from default views but preserves the audit trail
+- Review findings weekly at minimum -- set up continuous exports (control 14) for real-time response
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify critical and high findings count is decreasing
+echo "CRITICAL: $(gcloud scc findings list "$ORG_ID" --source="-" \
+  --filter='state="ACTIVE" AND finding.severity="CRITICAL"' \
+  --format="value(finding.name)" 2>/dev/null | wc -l)"
+echo "HIGH: $(gcloud scc findings list "$ORG_ID" --source="-" \
+  --filter='state="ACTIVE" AND finding.severity="HIGH"' \
+  --format="value(finding.name)" 2>/dev/null | wc -l)"
+# Expected: 0 CRITICAL, LOW count for HIGH (with tracking)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== SCC Findings Report ==="
+  echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo ""
+  for SEV in CRITICAL HIGH MEDIUM LOW; do
+    echo "=== $SEV ==="
+    gcloud scc findings list "$ORG_ID" \
+      --source="-" \
+      --filter="state=\"ACTIVE\" AND finding.severity=\"$SEV\"" \
+      --format=json 2>/dev/null
+    echo ""
+  done
+} > "$EVIDENCE_DIR/scc-findings-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 14. Continuous Exports from SCC (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List SCC notification configs (continuous exports)
+gcloud scc notifications list --organization="$ORG_ID" \
+  --format="table(name,description,pubsubTopic,filter)" 2>/dev/null \
+  || echo "No SCC notification configs found"
+```
+- PASS: at least one notification config exists that exports findings to Pub/Sub or BigQuery
+- FAIL: no notification configs
+
+**FIX** -- remediate if failing:
+```bash
+# Create a Pub/Sub topic for SCC findings
+gcloud pubsub topics create scc-findings-export \
+  --project="$PROJECT_ID"
+
+# Create a notification config to export all HIGH and CRITICAL findings
+gcloud scc notifications create scc-high-critical-export \
+  --organization="$ORG_ID" \
+  --pubsub-topic="projects/${PROJECT_ID}/topics/scc-findings-export" \
+  --filter='severity="HIGH" OR severity="CRITICAL"'
+
+# Create a Pub/Sub subscription (for processing or archival)
+gcloud pubsub subscriptions create scc-findings-sub \
+  --topic=scc-findings-export \
+  --project="$PROJECT_ID" \
+  --ack-deadline=60
+
+# Optional: Create a BigQuery subscription for long-term queryable storage
+# gcloud pubsub subscriptions create scc-findings-bq \
+#   --topic=scc-findings-export \
+#   --project="$PROJECT_ID" \
+#   --bigquery-table="${PROJECT_ID}:scc_exports.findings" \
+#   --write-metadata
+
+# Optional: export ALL findings (not just HIGH/CRITICAL)
+# gcloud scc notifications create scc-all-findings-export \
+#   --organization="$ORG_ID" \
+#   --pubsub-topic="projects/${PROJECT_ID}/topics/scc-findings-export" \
+#   --filter='state="ACTIVE"'
+```
+Gotchas:
+- SCC notifications are real-time -- every new finding or state change triggers a Pub/Sub message
+- The Pub/Sub topic must be in a project within the organization
+- Filter syntax uses SCC finding fields (severity, category, state), not Cloud Logging filter syntax
+- For BigQuery export, ensure the BigQuery dataset exists and the Pub/Sub service account has write access
+- Maximum 500 notification configs per organization
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud scc notifications describe scc-high-critical-export \
+  --organization="$ORG_ID" \
+  --format="yaml(name,pubsubTopic,filter)"
+# Expected: shows the Pub/Sub topic and filter
+
+# Verify Pub/Sub topic exists and has subscriptions
+gcloud pubsub topics describe scc-findings-export \
+  --project="$PROJECT_ID" \
+  --format="yaml(name)"
+
+gcloud pubsub subscriptions list --project="$PROJECT_ID" \
+  --filter="topic:scc-findings-export" \
+  --format="table(name)"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== SCC Notification Configs ==="
+  gcloud scc notifications list --organization="$ORG_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Pub/Sub Topic ==="
+  gcloud pubsub topics describe scc-findings-export --project="$PROJECT_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Pub/Sub Subscriptions ==="
+  gcloud pubsub subscriptions list --project="$PROJECT_ID" \
+    --filter="topic:scc-findings-export" --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/scc-exports-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Cloud Storage Controls
+
+### 15. Uniform Bucket-Level Access (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Check all buckets for uniform bucket-level access
+for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+  UBLA=$(gcloud storage buckets describe "gs://$BUCKET" \
+    --format="value(uniform_bucket_level_access)")
+  if [ "$UBLA" = "True" ]; then
+    echo "PASS: $BUCKET (uniform access enabled)"
+  else
+    echo "FAIL: $BUCKET (legacy ACLs active)"
+  fi
+done
+```
+- PASS: all buckets show uniform access enabled
+- FAIL: any bucket has legacy ACLs active
+
+**FIX** -- remediate if failing:
+```bash
+BUCKET_NAME="your-bucket"
+gcloud storage buckets update "gs://$BUCKET_NAME" \
+  --uniform-bucket-level-access
+```
+Gotchas:
+- Enabling uniform bucket-level access is irreversible after 90 days
+- Legacy ACLs on existing objects are preserved but ignored -- all access is controlled by IAM
+- If the org policy `storage.uniformBucketLevelAccess` is enforced, all new buckets automatically use uniform access
+- Systems relying on object-level ACLs (e.g., signed URLs with ACLs) will break -- test first
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud storage buckets describe "gs://$BUCKET_NAME" \
+  --format="value(uniform_bucket_level_access)"
+# Expected: True
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Bucket Uniform Access Status ==="
+  for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+    UBLA=$(gcloud storage buckets describe "gs://$BUCKET" \
+      --format="value(uniform_bucket_level_access)")
+    echo "$BUCKET: uniform_bucket_level_access=$UBLA"
+  done
+} > "$EVIDENCE_DIR/bucket-uniform-access-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+### 16. Public Access Prevention (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check each bucket's public access prevention setting
+for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+  PAP=$(gcloud storage buckets describe "gs://$BUCKET" \
+    --format="value(public_access_prevention)")
+  echo "$BUCKET: public_access_prevention=$PAP"
+done
+
+# Check org policy for public access prevention
+gcloud org-policies describe constraints/storage.publicAccessPrevention \
+  --organization="$ORG_ID" 2>/dev/null \
+  || echo "Org policy not set"
+```
+- PASS: all buckets show `enforced` and org policy is set
+- FAIL: any bucket shows `inherited` or `unspecified` without org policy enforcement
+
+**FIX** -- remediate if failing:
+```bash
+# Enable at bucket level
+BUCKET_NAME="your-bucket"
+gcloud storage buckets update "gs://$BUCKET_NAME" \
+  --public-access-prevention
+
+# Enable at org level (applies to all buckets in all projects)
+cat > /tmp/public-access-policy.yaml << 'EOF'
+constraint: constraints/storage.publicAccessPrevention
+booleanPolicy:
+  enforced: true
+EOF
+gcloud org-policies set-policy /tmp/public-access-policy.yaml \
+  --organization="$ORG_ID"
+```
+Gotchas:
+- Public access prevention blocks `allUsers` and `allAuthenticatedUsers` IAM bindings
+- If you need a public bucket (e.g., static website hosting), exempt that specific project from the org policy
+- This does not affect signed URLs -- signed URLs bypass public access prevention
+- Enabling at org level overrides project-level settings
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud storage buckets describe "gs://$BUCKET_NAME" \
+  --format="value(public_access_prevention)"
+# Expected: enforced
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Bucket Public Access Prevention ==="
+  for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+    PAP=$(gcloud storage buckets describe "gs://$BUCKET" \
+      --format="value(public_access_prevention)")
+    echo "$BUCKET: public_access_prevention=$PAP"
+  done
+
+  echo ""
+  echo "=== Org Policy ==="
+  gcloud org-policies describe constraints/storage.publicAccessPrevention \
+    --organization="$ORG_ID" 2>/dev/null || echo "Not set"
+} > "$EVIDENCE_DIR/bucket-public-access-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+### 17. Cloud Storage Encryption (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# All Cloud Storage data is encrypted at rest by default (Google-managed keys).
+# Check if any buckets use CMEK (Customer-Managed Encryption Keys):
+for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+  ENC=$(gcloud storage buckets describe "gs://$BUCKET" \
+    --format="value(default_kms_key)")
+  if [ -n "$ENC" ]; then
+    echo "CMEK: $BUCKET -> $ENC"
+  else
+    echo "GOOGLE_MANAGED: $BUCKET"
+  fi
+done
+```
+- PASS: all buckets show encryption (always true -- Google encrypts by default); CMEK for sensitive/compliance buckets
+- FAIL: sensitive or compliance-critical buckets without CMEK
+
+**FIX** -- remediate if failing:
+```bash
+# Create a Cloud KMS key for bucket encryption (see Cloud KMS section for full key setup)
+KEY_RING="soc2-keyring"
+KEY_NAME="storage-key"
+LOCATION="us"
+
+gcloud kms keyrings create "$KEY_RING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID"
+
+gcloud kms keys create "$KEY_NAME" \
+  --keyring="$KEY_RING" \
+  --location="$LOCATION" \
+  --purpose=encryption \
+  --rotation-period=90d \
+  --next-rotation-time=$(date -u -v+90d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+    || date -u -d "+90 days" +%Y-%m-%dT%H:%M:%SZ) \
+  --project="$PROJECT_ID"
+
+# Grant the Cloud Storage service agent access to the key
+GCS_SA="service-$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')@gs-project-accounts.iam.gserviceaccount.com"
+gcloud kms keys add-iam-policy-binding "$KEY_NAME" \
+  --keyring="$KEY_RING" \
+  --location="$LOCATION" \
+  --member="serviceAccount:$GCS_SA" \
+  --role="roles/cloudkms.cryptoKeyEncrypterDecrypter" \
+  --project="$PROJECT_ID"
+
+# Set CMEK as default encryption on the bucket
+BUCKET_NAME="your-sensitive-bucket"
+gcloud storage buckets update "gs://$BUCKET_NAME" \
+  --default-encryption-key="projects/${PROJECT_ID}/locations/${LOCATION}/keyRings/${KEY_RING}/cryptoKeys/${KEY_NAME}"
+```
+Gotchas:
+- Google-managed encryption is always on -- you do NOT need CMEK for basic SOC 2 compliance
+- CMEK gives you control over the encryption key lifecycle (rotation, destruction, access control)
+- Some auditors require CMEK for "encryption at rest" evidence; others accept Google-managed
+- Setting CMEK on a bucket only affects new objects -- existing objects remain encrypted with their original key
+- Deleting a CMEK key renders all data encrypted with it permanently inaccessible
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud storage buckets describe "gs://$BUCKET_NAME" \
+  --format="value(default_kms_key)"
+# Expected: projects/PROJECT/locations/LOCATION/keyRings/KEYRING/cryptoKeys/KEY
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Bucket Encryption Configuration ==="
+  for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+    echo "--- $BUCKET ---"
+    gcloud storage buckets describe "gs://$BUCKET" \
+      --format="json(default_kms_key,encryption)"
+  done
+} > "$EVIDENCE_DIR/bucket-encryption-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 18. Cloud Storage Versioning (TSC: CC6.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+  VERSIONING=$(gcloud storage buckets describe "gs://$BUCKET" \
+    --format="value(versioning)")
+  echo "$BUCKET: versioning=$VERSIONING"
+done
+```
+- PASS: versioning enabled on critical/compliance buckets
+- FAIL: versioning disabled on buckets containing important data
+
+**FIX** -- remediate if failing:
+```bash
+BUCKET_NAME="your-critical-bucket"
+gcloud storage buckets update "gs://$BUCKET_NAME" --versioning
+```
+Gotchas:
+- Versioning increases storage costs -- every overwrite or delete creates a new version
+- Combine with lifecycle rules to delete old versions after a retention period
+- Versioning is essential for the audit log archive bucket to prevent tampering
+- Suspending versioning stops creating new versions but preserves existing ones
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud storage buckets describe "gs://$BUCKET_NAME" \
+  --format="value(versioning)"
+# Expected: True
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Bucket Versioning Status ==="
+  for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+    VERSIONING=$(gcloud storage buckets describe "gs://$BUCKET" \
+      --format="value(versioning)")
+    echo "$BUCKET: versioning=$VERSIONING"
+  done
+} > "$EVIDENCE_DIR/bucket-versioning-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+### 19. Cloud Storage Lifecycle Policies (TSC: A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+  echo "=== $BUCKET ==="
+  gcloud storage buckets describe "gs://$BUCKET" \
+    --format="json(lifecycle)" 2>/dev/null
+done
+```
+- PASS: lifecycle rules exist on log buckets (transition to cheaper storage classes, eventual deletion)
+- FAIL: no lifecycle rules on log or archive buckets
+
+**FIX** -- remediate if failing:
+```bash
+BUCKET_NAME="${PROJECT_ID}-audit-logs"
+
+cat > /tmp/lifecycle-rules.json << 'EOF'
+{
+  "lifecycle": {
+    "rule": [
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "NEARLINE"},
+        "condition": {"age": 90}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "COLDLINE"},
+        "condition": {"age": 365}
+      },
+      {
+        "action": {"type": "SetStorageClass", "storageClass": "ARCHIVE"},
+        "condition": {"age": 730}
+      },
+      {
+        "action": {"type": "Delete"},
+        "condition": {"age": 2555, "isLive": true}
+      },
+      {
+        "action": {"type": "Delete"},
+        "condition": {"age": 30, "isLive": false}
+      }
+    ]
+  }
+}
+EOF
+gcloud storage buckets update "gs://$BUCKET_NAME" \
+  --lifecycle-file=/tmp/lifecycle-rules.json
+```
+Gotchas:
+- Lifecycle transitions incur early deletion fees if objects are moved before the minimum storage duration (30 days for Nearline, 90 for Coldline, 365 for Archive)
+- `isLive: false` targets noncurrent (versioned) objects -- use this to clean up old versions
+- Lifecycle rules apply retroactively to existing objects
+- Retention policies and lifecycle delete rules can conflict -- retention takes precedence
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud storage buckets describe "gs://$BUCKET_NAME" \
+  --format="json(lifecycle)"
+# Expected: lifecycle rules matching the configuration above
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Bucket Lifecycle Policies ==="
+  for BUCKET in $(gcloud storage buckets list --project="$PROJECT_ID" --format="value(name)"); do
+    echo "--- $BUCKET ---"
+    gcloud storage buckets describe "gs://$BUCKET" --format="json(lifecycle)"
+  done
+} > "$EVIDENCE_DIR/bucket-lifecycle-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 20. Cloud Storage Access Logging (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Cloud Storage access logging is controlled via Cloud Audit Logs (Data Access logs).
+# Check if Data Access logs are enabled for Cloud Storage:
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs[] | select(.service == "allServices" or .service == "storage.googleapis.com")'
+```
+- PASS: `DATA_READ` and `DATA_WRITE` audit log types are enabled for `allServices` or `storage.googleapis.com`
+- FAIL: no audit config for storage, or Data Access logs not enabled
+
+**FIX** -- remediate if failing:
+```bash
+# If Data Access logs are not enabled for all services (see control 8),
+# enable specifically for Cloud Storage:
+gcloud projects get-iam-policy "$PROJECT_ID" --format=json > /tmp/project-policy.json
+
+# Add or merge storage-specific audit config
+jq '.auditConfigs += [{
+  "service": "storage.googleapis.com",
+  "auditLogConfigs": [
+    {"logType": "ADMIN_READ"},
+    {"logType": "DATA_READ"},
+    {"logType": "DATA_WRITE"}
+  ]
+}]' /tmp/project-policy.json > /tmp/project-policy-updated.json
+
+gcloud projects set-iam-policy "$PROJECT_ID" /tmp/project-policy-updated.json
+```
+Gotchas:
+- GCP does not use bucket-level access logs like AWS S3 -- it uses Cloud Audit Logs instead
+- DATA_READ logs for high-traffic buckets can generate enormous log volume and cost
+- Consider exempting automated service accounts from DATA_READ logging to reduce noise
+- If you enabled Data Access logs for `allServices` in control 8, storage is already covered
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs[] | select(.service == "allServices" or .service == "storage.googleapis.com")'
+# Expected: auditLogConfigs containing DATA_READ, DATA_WRITE, ADMIN_READ
+
+# Verify logs are flowing
+gcloud logging read \
+  'resource.type="gcs_bucket" AND logName:"cloudaudit.googleapis.com%2Fdata_access"' \
+  --project="$PROJECT_ID" \
+  --limit=5 \
+  --format="table(timestamp,protoPayload.methodName,protoPayload.resourceName)"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Storage Audit Log Configuration ==="
+  gcloud projects get-iam-policy "$PROJECT_ID" \
+    --format=json | jq '.auditConfigs'
+
+  echo ""
+  echo "=== Recent Storage Access Logs ==="
+  gcloud logging read \
+    'resource.type="gcs_bucket" AND logName:"cloudaudit.googleapis.com%2Fdata_access"' \
+    --project="$PROJECT_ID" \
+    --limit=25 \
+    --format=json
+} > "$EVIDENCE_DIR/storage-access-logs-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Cloud SQL Controls
+
+### 21. Cloud SQL Encryption (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# All Cloud SQL instances are encrypted at rest by default (Google-managed keys).
+# Check if any instances use CMEK:
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  KMS_KEY=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(diskEncryptionConfiguration.kmsKeyName)")
+  if [ -n "$KMS_KEY" ]; then
+    echo "CMEK: $INSTANCE -> $KMS_KEY"
+  else
+    echo "GOOGLE_MANAGED: $INSTANCE (encrypted, but not with CMEK)"
+  fi
+done
+```
+- PASS: all instances are encrypted (always true); CMEK for compliance-critical instances
+- FAIL: compliance-critical instances without CMEK (if CMEK is required by your auditor)
+
+**FIX** -- remediate if failing:
+```
+Cloud SQL encryption is a creation-time-only setting. You cannot change the
+encryption key on an existing instance. To migrate to CMEK:
+
+1. Create a Cloud KMS key (see control 32)
+2. Export the database (pg_dump / mysqldump / gcloud sql export)
+3. Create a new instance with CMEK:
+```
+```bash
+KEY_NAME="projects/${PROJECT_ID}/locations/${REGION}/keyRings/soc2-keyring/cryptoKeys/cloudsql-key"
+
+gcloud sql instances create "${INSTANCE}-cmek" \
+  --database-version=POSTGRES_15 \
+  --tier=db-custom-2-7680 \
+  --region="$REGION" \
+  --disk-encryption-key="$KEY_NAME" \
+  --root-password="CHANGE_ME"
+
+# 4. Import the database
+# gcloud sql import sql "${INSTANCE}-cmek" gs://bucket/export.sql
+
+# 5. Update application connection strings
+# 6. Delete the old instance after verification
+```
+Gotchas:
+- Cloud SQL is ALWAYS encrypted at rest with Google-managed keys -- this is non-negotiable and non-optional
+- CMEK is optional but recommended for SOC 2 to demonstrate key management control
+- CMEK cannot be added to an existing instance -- requires recreation
+- The Cloud SQL service agent needs `roles/cloudkms.cryptoKeyEncrypterDecrypter` on the KMS key
+- Deleting the KMS key renders the database permanently inaccessible
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "${INSTANCE}-cmek" \
+  --format="yaml(diskEncryptionConfiguration)"
+# Expected: kmsKeyName points to your KMS key
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL Encryption Status ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(diskEncryptionConfiguration,diskEncryptionStatus)"
+  done
+} > "$EVIDENCE_DIR/cloudsql-encryption-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 22. Cloud SQL SSL/TLS Enforcement (TSC: CC6.1, CC6.7)
+
+**DISCOVER** -- check current state:
+```bash
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  SSL_MODE=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.ipConfiguration.sslMode)")
+  REQUIRE_SSL=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.ipConfiguration.requireSsl)")
+  echo "$INSTANCE: sslMode=$SSL_MODE requireSsl=$REQUIRE_SSL"
+done
+```
+- PASS: `sslMode=ENCRYPTED_ONLY` or `requireSsl=True` on all instances
+- FAIL: `requireSsl=False` or `sslMode` not set
+
+**FIX** -- remediate if failing:
+```bash
+INSTANCE_NAME="your-instance"
+
+# Require SSL for all connections (recommended: ENCRYPTED_ONLY mode)
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --require-ssl
+
+# For stricter enforcement (verify client certificates):
+# gcloud sql instances patch "$INSTANCE_NAME" \
+#   --ssl-mode=TRUSTED_CLIENT_CERTIFICATE_REQUIRED
+
+# Generate client certificates for applications
+gcloud sql ssl client-certs create "app-cert" /tmp/client-cert.pem \
+  --instance="$INSTANCE_NAME"
+
+gcloud sql ssl client-certs describe "app-cert" \
+  --instance="$INSTANCE_NAME" \
+  --format="value(cert)" > /tmp/client-cert.pem
+
+# Download server CA certificate
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="value(serverCaCert.cert)" > /tmp/server-ca.pem
+```
+Gotchas:
+- `--require-ssl` rejects non-SSL connections but does not verify client certificates
+- `--ssl-mode=TRUSTED_CLIENT_CERTIFICATE_REQUIRED` requires valid client certs -- strongest but requires certificate management
+- Cloud SQL Auth Proxy handles SSL automatically -- if using the proxy, SSL is already enforced
+- Enabling SSL does not disconnect existing connections -- they persist until they disconnect and must reconnect with SSL
+- Some connection poolers may need configuration changes for SSL
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="yaml(settings.ipConfiguration.sslMode,settings.ipConfiguration.requireSsl)"
+# Expected: requireSsl: true (or sslMode: ENCRYPTED_ONLY)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL SSL Configuration ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(settings.ipConfiguration.sslMode,settings.ipConfiguration.requireSsl,serverCaCert.expirationTime)"
+  done
+} > "$EVIDENCE_DIR/cloudsql-ssl-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 23. Cloud SQL Automated Backups (TSC: A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  BACKUP_ENABLED=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.backupConfiguration.enabled)")
+  PITR=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.backupConfiguration.pointInTimeRecoveryEnabled)")
+  RETENTION=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.backupConfiguration.transactionLogRetentionDays)")
+  BACKUP_RETENTION=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.backupConfiguration.backupRetentionSettings.retainedBackups)")
+  echo "$INSTANCE: backup=$BACKUP_ENABLED pitr=$PITR logRetention=${RETENTION}d backupCount=$BACKUP_RETENTION"
+done
+```
+- PASS: `backup=True`, `pitr=True`, retention >= 7 days, backup count >= 7
+- FAIL: backups disabled, PITR disabled, or insufficient retention
+
+**FIX** -- remediate if failing:
+```bash
+INSTANCE_NAME="your-instance"
+
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --backup-start-time="02:00" \
+  --enable-bin-log \
+  --enable-point-in-time-recovery \
+  --retained-backups-count=14 \
+  --retained-transaction-log-days=7
+```
+Gotchas:
+- `--enable-bin-log` is required for MySQL PITR; PostgreSQL uses WAL archiving automatically
+- Backup start time is in UTC -- choose a low-traffic window
+- Increasing `retained-backups-count` increases storage costs
+- PITR allows recovery to any point within the transaction log retention window
+- Backups are stored in the same region as the instance by default
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="yaml(settings.backupConfiguration)"
+# Expected: enabled: true, pointInTimeRecoveryEnabled: true, retainedBackups >= 7
+
+# List recent backups
+gcloud sql backups list --instance="$INSTANCE_NAME" \
+  --format="table(id,type,status,startTime,endTime)"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL Backup Configuration ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(settings.backupConfiguration)"
+    echo ""
+    echo "Recent backups:"
+    gcloud sql backups list --instance="$INSTANCE" --format=json 2>/dev/null
+  done
+} > "$EVIDENCE_DIR/cloudsql-backups-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 24. Cloud SQL High Availability (TSC: A1.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  HA=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.availabilityType)")
+  echo "$INSTANCE: availabilityType=$HA"
+done
+```
+- PASS: `REGIONAL` (high availability with automatic failover)
+- FAIL: `ZONAL` (single zone, no automatic failover)
+
+**FIX** -- remediate if failing:
+```bash
+INSTANCE_NAME="your-instance"
+
+# Enable high availability (regional)
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --availability-type=REGIONAL
+```
+Gotchas:
+- Switching from ZONAL to REGIONAL causes a brief outage (a few minutes) for failover setup
+- REGIONAL doubles the cost (standby replica in another zone)
+- Failover is automatic on zone failure -- RTO is typically 1-2 minutes
+- Read replicas do NOT count as HA -- they are for read scaling, not failover
+- Test failover with: `gcloud sql instances failover INSTANCE_NAME`
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="value(settings.availabilityType)"
+# Expected: REGIONAL
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL High Availability ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(settings.availabilityType,gceZone,secondaryGceZone,state)"
+  done
+} > "$EVIDENCE_DIR/cloudsql-ha-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 25. Cloud SQL Public IP (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  PUBLIC_IP=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(ipAddresses.filter(type=PRIMARY).ipAddress)")
+  PRIVATE_IP=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(ipAddresses.filter(type=PRIVATE).ipAddress)")
+  PRIVATE_NETWORK=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.ipConfiguration.privateNetwork)")
+  echo "$INSTANCE: publicIP=$PUBLIC_IP privateIP=$PRIVATE_IP privateNetwork=$PRIVATE_NETWORK"
+done
+```
+- PASS: no public IP assigned, private IP configured with VPC peering
+- FAIL: public IP present
+
+**FIX** -- remediate if failing:
+```bash
+INSTANCE_NAME="your-instance"
+VPC_NETWORK="projects/${PROJECT_ID}/global/networks/default"
+
+# Enable Private IP (requires VPC network with private service connection)
+# First, ensure private services access is configured on the VPC:
+gcloud compute addresses create google-managed-services-range \
+  --global \
+  --purpose=VPC_PEERING \
+  --prefix-length=16 \
+  --network=default \
+  --project="$PROJECT_ID"
+
+gcloud services vpc-peerings connect \
+  --service=servicenetworking.googleapis.com \
+  --ranges=google-managed-services-range \
+  --network=default \
+  --project="$PROJECT_ID"
+
+# Enable private IP on the instance
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --network="$VPC_NETWORK" \
+  --no-assign-ip
+
+# If you cannot remove the public IP immediately, restrict authorized networks
+# gcloud sql instances patch "$INSTANCE_NAME" \
+#   --authorized-networks="" \
+#   --no-assign-ip
+```
+Gotchas:
+- Removing public IP breaks connections from outside the VPC -- ensure all clients use private IP or Cloud SQL Auth Proxy
+- Cloud SQL Auth Proxy is the recommended connection method -- it handles SSL, IAM auth, and works from anywhere
+- Private services access requires VPC network admin permissions
+- The VPC peering range must not overlap with existing subnet ranges
+- You can use Cloud SQL Auth Proxy from Cloud Run, GKE, or Compute Engine without a public IP
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="yaml(ipAddresses,settings.ipConfiguration.privateNetwork,settings.ipConfiguration.ipv4Enabled)"
+# Expected: no PRIMARY IP, PRIVATE IP present, ipv4Enabled: false
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL Network Configuration ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(ipAddresses,settings.ipConfiguration)"
+  done
+} > "$EVIDENCE_DIR/cloudsql-network-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 26. Cloud SQL Authorized Networks (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+  echo "=== $INSTANCE ==="
+  gcloud sql instances describe "$INSTANCE" \
+    --format="json(settings.ipConfiguration.authorizedNetworks)"
+  # Check for overly permissive 0.0.0.0/0
+  OPEN=$(gcloud sql instances describe "$INSTANCE" \
+    --format="value(settings.ipConfiguration.authorizedNetworks.value)" | grep -c "0.0.0.0/0" || true)
+  if [ "$OPEN" -gt 0 ]; then
+    echo "FAIL: 0.0.0.0/0 in authorized networks -- open to the entire internet!"
+  fi
+done
+```
+- PASS: no `0.0.0.0/0` in authorized networks; ideally no authorized networks at all (private IP only)
+- FAIL: `0.0.0.0/0` present, or overly broad CIDR ranges
+
+**FIX** -- remediate if failing:
+```bash
+INSTANCE_NAME="your-instance"
+
+# Remove all authorized networks (safest if using private IP + Auth Proxy)
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --clear-authorized-networks
+
+# Or restrict to specific known IPs
+gcloud sql instances patch "$INSTANCE_NAME" \
+  --authorized-networks="203.0.113.10/32,198.51.100.0/24"
+```
+Gotchas:
+- `--clear-authorized-networks` removes all public IP access rules
+- If public IP is required, restrict to the narrowest CIDR possible
+- Cloud SQL Auth Proxy is the recommended alternative to authorized networks
+- Authorized networks only apply when the instance has a public IP -- private IP instances ignore them
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud sql instances describe "$INSTANCE_NAME" \
+  --format="json(settings.ipConfiguration.authorizedNetworks)"
+# Expected: empty array [] or only specific narrow CIDRs
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud SQL Authorized Networks ==="
+  for INSTANCE in $(gcloud sql instances list --format="value(name)"); do
+    echo "--- $INSTANCE ---"
+    gcloud sql instances describe "$INSTANCE" \
+      --format="json(settings.ipConfiguration.authorizedNetworks,settings.ipConfiguration.ipv4Enabled)"
+  done
+} > "$EVIDENCE_DIR/cloudsql-authorized-networks-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## VPC / Network Controls
+
+### 27. VPC Flow Logs (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check all subnets for flow log configuration
+for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+  --format="csv[no-heading](name,region)"); do
+  SUBNET_NAME=$(echo "$SUBNET" | cut -d',' -f1)
+  REGION=$(echo "$SUBNET" | cut -d',' -f2)
+  FLOW_LOGS=$(gcloud compute networks subnets describe "$SUBNET_NAME" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --format="value(enableFlowLogs)")
+  SAMPLE_RATE=$(gcloud compute networks subnets describe "$SUBNET_NAME" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --format="value(logConfig.flowSampling)" 2>/dev/null)
+  if [ "$FLOW_LOGS" = "True" ]; then
+    echo "PASS: $SUBNET_NAME ($REGION) flowLogs=enabled sampleRate=$SAMPLE_RATE"
+  else
+    echo "FAIL: $SUBNET_NAME ($REGION) flowLogs=disabled"
+  fi
+done
+```
+- PASS: all subnets have flow logs enabled
+- FAIL: any subnet has flow logs disabled
+
+**FIX** -- remediate if failing:
+```bash
+SUBNET_NAME="your-subnet"
+REGION="us-central1"
+
+# Enable VPC Flow Logs with recommended settings
+gcloud compute networks subnets update "$SUBNET_NAME" \
+  --region="$REGION" \
+  --enable-flow-logs \
+  --logging-aggregation-interval=INTERVAL_5_SEC \
+  --logging-flow-sampling=0.5 \
+  --logging-metadata=INCLUDE_ALL_METADATA \
+  --project="$PROJECT_ID"
+
+# Enable on ALL subnets at once:
+for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+  --format="csv[no-heading](name,region)"); do
+  SNAME=$(echo "$SUBNET" | cut -d',' -f1)
+  SREG=$(echo "$SUBNET" | cut -d',' -f2)
+  echo "Enabling flow logs on $SNAME ($SREG)..."
+  gcloud compute networks subnets update "$SNAME" \
+    --region="$SREG" \
+    --enable-flow-logs \
+    --logging-aggregation-interval=INTERVAL_5_SEC \
+    --logging-flow-sampling=0.5 \
+    --logging-metadata=INCLUDE_ALL_METADATA \
+    --project="$PROJECT_ID"
+done
+```
+Gotchas:
+- Flow logs cost money -- sampling rate (0.5 = 50%) is a cost/visibility tradeoff
+- `INTERVAL_5_SEC` is the most granular aggregation interval; `INTERVAL_10_MIN` is cheapest
+- `INCLUDE_ALL_METADATA` adds source/dest instance info but increases log size
+- Flow logs are per-subnet, not per-VPC
+- For high-traffic subnets, consider `--logging-flow-sampling=0.1` (10%) to reduce cost
+- Logs appear in Cloud Logging under `resource.type="gce_subnetwork"`
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud compute networks subnets describe "$SUBNET_NAME" \
+  --region="$REGION" \
+  --project="$PROJECT_ID" \
+  --format="yaml(enableFlowLogs,logConfig)"
+# Expected: enableFlowLogs: true with logConfig showing sampling and metadata settings
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== VPC Flow Logs Configuration ==="
+  for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+    --format="csv[no-heading](name,region)"); do
+    SNAME=$(echo "$SUBNET" | cut -d',' -f1)
+    SREG=$(echo "$SUBNET" | cut -d',' -f2)
+    echo "--- $SNAME ($SREG) ---"
+    gcloud compute networks subnets describe "$SNAME" \
+      --region="$SREG" \
+      --project="$PROJECT_ID" \
+      --format="json(enableFlowLogs,logConfig)"
+  done
+} > "$EVIDENCE_DIR/vpc-flow-logs-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 28. Firewall Rules Audit (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Find overly permissive firewall rules (0.0.0.0/0 on sensitive ports)
+echo "=== All Rules Allowing 0.0.0.0/0 ==="
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND direction=INGRESS" \
+  --format="table(name,network,direction,allowed[].map().firewall_rule().list():label=ALLOWED,sourceRanges)"
+
+echo ""
+echo "=== Rules Allowing All Ports from Anywhere ==="
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND allowed.ports=() AND direction=INGRESS" \
+  --format="table(name,network,allowed)"
+
+echo ""
+echo "=== Rules Exposing SSH (22) to Anywhere ==="
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND allowed.ports:(22)" \
+  --format="table(name,network)"
+
+echo ""
+echo "=== Rules Exposing RDP (3389) to Anywhere ==="
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND allowed.ports:(3389)" \
+  --format="table(name,network)"
+
+echo ""
+echo "=== Rules Exposing Database Ports to Anywhere ==="
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND (allowed.ports:(3306) OR allowed.ports:(5432) OR allowed.ports:(27017) OR allowed.ports:(6379))" \
+  --format="table(name,network,allowed)"
+```
+- PASS: no rules allow 0.0.0.0/0 on SSH, RDP, database ports, or all ports
+- FAIL: any of the above queries return results
+
+**FIX** -- remediate if failing:
+```bash
+RULE_NAME="default-allow-ssh"
+
+# Option A: Delete the overly permissive rule
+gcloud compute firewall-rules delete "$RULE_NAME" \
+  --project="$PROJECT_ID" --quiet
+
+# Option B: Restrict to specific source ranges
+gcloud compute firewall-rules update "$RULE_NAME" \
+  --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
+  --project="$PROJECT_ID"
+
+# Option C: Replace with IAP tunnel for SSH (recommended)
+# 1. Delete the open SSH rule
+gcloud compute firewall-rules delete "default-allow-ssh" \
+  --project="$PROJECT_ID" --quiet
+
+# 2. Create IAP tunnel rule (allows SSH only via IAP)
+gcloud compute firewall-rules create allow-ssh-via-iap \
+  --project="$PROJECT_ID" \
+  --network=default \
+  --direction=INGRESS \
+  --action=ALLOW \
+  --rules=tcp:22 \
+  --source-ranges=35.235.240.0/20 \
+  --description="Allow SSH via IAP tunnel only"
+```
+Gotchas:
+- The default network has permissive firewall rules (`default-allow-ssh`, `default-allow-rdp`, `default-allow-icmp`, `default-allow-internal`) -- review and restrict all of them
+- `35.235.240.0/20` is the IAP tunnel IP range -- this is the only source range needed for SSH via IAP
+- Firewall rules are evaluated by priority (lower number = higher priority) -- ensure restrictive rules have lower priority numbers
+- Use network tags to scope firewall rules to specific instances rather than entire networks
+- Implied deny rule at priority 65535 blocks all ingress not explicitly allowed
+
+**VERIFY** -- confirm the fix:
+```bash
+# Re-run the discovery commands
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="sourceRanges:(0.0.0.0/0) AND direction=INGRESS" \
+  --format="table(name,network,allowed,sourceRanges)"
+# Expected: no results, or only rules for load balancer health checks (130.211.0.0/22, 35.191.0.0/16)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== All Firewall Rules ==="
+  gcloud compute firewall-rules list --project="$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== Overly Permissive Rules (0.0.0.0/0 ingress) ==="
+  gcloud compute firewall-rules list --project="$PROJECT_ID" \
+    --filter="sourceRanges:(0.0.0.0/0) AND direction=INGRESS" --format=json
+} > "$EVIDENCE_DIR/firewall-rules-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 29. Private Google Access (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+  --format="csv[no-heading](name,region)"); do
+  SUBNET_NAME=$(echo "$SUBNET" | cut -d',' -f1)
+  REGION=$(echo "$SUBNET" | cut -d',' -f2)
+  PGA=$(gcloud compute networks subnets describe "$SUBNET_NAME" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --format="value(privateIpGoogleAccess)")
+  echo "$SUBNET_NAME ($REGION): privateGoogleAccess=$PGA"
+done
+```
+- PASS: all subnets have Private Google Access enabled
+- FAIL: any subnet has `privateGoogleAccess=False`
+
+**FIX** -- remediate if failing:
+```bash
+SUBNET_NAME="your-subnet"
+REGION="us-central1"
+
+gcloud compute networks subnets update "$SUBNET_NAME" \
+  --region="$REGION" \
+  --enable-private-ip-google-access \
+  --project="$PROJECT_ID"
+
+# Enable on ALL subnets:
+for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+  --format="csv[no-heading](name,region)"); do
+  SNAME=$(echo "$SUBNET" | cut -d',' -f1)
+  SREG=$(echo "$SUBNET" | cut -d',' -f2)
+  gcloud compute networks subnets update "$SNAME" \
+    --region="$SREG" \
+    --enable-private-ip-google-access \
+    --project="$PROJECT_ID"
+done
+```
+Gotchas:
+- Private Google Access allows VMs without external IPs to reach Google APIs (Cloud Storage, BigQuery, etc.)
+- Without PGA, VMs without external IPs cannot reach `*.googleapis.com`
+- PGA is required when using Cloud NAT or VMs without public IPs
+- No additional cost for enabling PGA
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud compute networks subnets describe "$SUBNET_NAME" \
+  --region="$REGION" \
+  --project="$PROJECT_ID" \
+  --format="value(privateIpGoogleAccess)"
+# Expected: True
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Private Google Access Status ==="
+  for SUBNET in $(gcloud compute networks subnets list --project="$PROJECT_ID" \
+    --format="csv[no-heading](name,region)"); do
+    SNAME=$(echo "$SUBNET" | cut -d',' -f1)
+    SREG=$(echo "$SUBNET" | cut -d',' -f2)
+    PGA=$(gcloud compute networks subnets describe "$SNAME" \
+      --region="$SREG" --project="$PROJECT_ID" \
+      --format="value(privateIpGoogleAccess)")
+    echo "$SNAME ($SREG): privateGoogleAccess=$PGA"
+  done
+} > "$EVIDENCE_DIR/private-google-access-$(date +%Y%m%d-%H%M%S).txt"
+```
+
+---
+
+### 30. Cloud NAT (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List all Cloud NAT configurations
+gcloud compute routers list --project="$PROJECT_ID" \
+  --format="table(name,region,network)"
+
+# Check for NAT configurations on each router
+for ROUTER in $(gcloud compute routers list --project="$PROJECT_ID" \
+  --format="csv[no-heading](name,region)"); do
+  ROUTER_NAME=$(echo "$ROUTER" | cut -d',' -f1)
+  REGION=$(echo "$ROUTER" | cut -d',' -f2)
+  echo "=== $ROUTER_NAME ($REGION) ==="
+  gcloud compute routers nats list \
+    --router="$ROUTER_NAME" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --format="table(name,natIpAllocateOption,sourceSubnetworkIpRangesToNat)" 2>/dev/null \
+    || echo "No NAT configured"
+done
+
+# Check if VMs exist without external IPs and without Cloud NAT
+echo ""
+echo "=== VMs Without External IPs ==="
+gcloud compute instances list --project="$PROJECT_ID" \
+  --filter="networkInterfaces.accessConfigs.natIP='' OR NOT networkInterfaces.accessConfigs:*" \
+  --format="table(name,zone,networkInterfaces[0].networkIP)" 2>/dev/null
+```
+- PASS: Cloud NAT configured for subnets with VMs that lack external IPs
+- FAIL: VMs without external IPs exist but no Cloud NAT is configured
+
+**FIX** -- remediate if failing:
+```bash
+REGION="us-central1"
+NETWORK="default"
+ROUTER_NAME="nat-router"
+NAT_NAME="cloud-nat"
+
+# Create a Cloud Router (required for Cloud NAT)
+gcloud compute routers create "$ROUTER_NAME" \
+  --network="$NETWORK" \
+  --region="$REGION" \
+  --project="$PROJECT_ID"
+
+# Create Cloud NAT with automatic IP allocation
+gcloud compute routers nats create "$NAT_NAME" \
+  --router="$ROUTER_NAME" \
+  --region="$REGION" \
+  --auto-allocate-nat-external-ips \
+  --nat-all-subnet-ip-ranges \
+  --enable-logging \
+  --project="$PROJECT_ID"
+```
+Gotchas:
+- Cloud NAT allows VMs without external IPs to access the internet (outbound only)
+- Cloud NAT is regional -- you need one per region with VMs
+- `--nat-all-subnet-ip-ranges` applies to all subnets; use `--nat-custom-subnet-ip-ranges` to limit scope
+- Cloud NAT logging helps track outbound connections for security monitoring
+- Cloud NAT has a per-VM port allocation limit -- default is 64 ports per VM, increase if VMs make many outbound connections
+- No inbound connections through Cloud NAT -- it is egress-only
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud compute routers nats describe "$NAT_NAME" \
+  --router="$ROUTER_NAME" \
+  --region="$REGION" \
+  --project="$PROJECT_ID" \
+  --format="yaml(name,natIpAllocateOption,sourceSubnetworkIpRangesToNat,enableEndpointIndependentMapping,logConfig)"
+# Expected: NAT configured with AUTO_ONLY IP allocation and ALL_SUBNETWORKS_ALL_IP_RANGES
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Cloud NAT Configurations ==="
+  for ROUTER in $(gcloud compute routers list --project="$PROJECT_ID" \
+    --format="csv[no-heading](name,region)"); do
+    RNAME=$(echo "$ROUTER" | cut -d',' -f1)
+    RREG=$(echo "$ROUTER" | cut -d',' -f2)
+    echo "--- Router: $RNAME ($RREG) ---"
+    gcloud compute routers nats list \
+      --router="$RNAME" --region="$RREG" --project="$PROJECT_ID" --format=json 2>/dev/null
+  done
+} > "$EVIDENCE_DIR/cloud-nat-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 31. Default Network (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if the default network exists
+gcloud compute networks list --project="$PROJECT_ID" \
+  --filter="name=default" \
+  --format="table(name,autoCreateSubnetworks,subnetMode)"
+
+# If it exists, check its firewall rules
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="network:default" \
+  --format="table(name,direction,allowed,sourceRanges)"
+```
+- PASS: default network does not exist, or its permissive firewall rules have been removed
+- FAIL: default network exists with its permissive default rules
+
+**FIX** -- remediate if failing:
+```bash
+# Option A (recommended): Delete the default network entirely
+# First, delete all firewall rules on the default network
+for RULE in $(gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="network:default" --format="value(name)"); do
+  gcloud compute firewall-rules delete "$RULE" --project="$PROJECT_ID" --quiet
+done
+
+# Delete the default network
+gcloud compute networks delete default --project="$PROJECT_ID" --quiet
+
+# Option B: Keep the default network but restrict its firewall rules
+# Delete overly permissive rules
+gcloud compute firewall-rules delete default-allow-ssh --project="$PROJECT_ID" --quiet
+gcloud compute firewall-rules delete default-allow-rdp --project="$PROJECT_ID" --quiet
+gcloud compute firewall-rules delete default-allow-icmp --project="$PROJECT_ID" --quiet
+
+# Restrict internal rule to specific protocols and ports
+gcloud compute firewall-rules update default-allow-internal \
+  --project="$PROJECT_ID" \
+  --rules=tcp:22,tcp:443,icmp \
+  --source-ranges="10.128.0.0/9"
+
+# Prevent the default network from being recreated in new projects
+# (org policy)
+cat > /tmp/skip-default-network.yaml << 'EOF'
+constraint: constraints/compute.skipDefaultNetworkCreation
+booleanPolicy:
+  enforced: true
+EOF
+gcloud org-policies set-policy /tmp/skip-default-network.yaml \
+  --organization="$ORG_ID"
+```
+Gotchas:
+- The default network has four permissive rules: `default-allow-ssh`, `default-allow-rdp`, `default-allow-icmp`, `default-allow-internal`
+- Deleting the default network requires deleting all its firewall rules and subnets first
+- Some GCP services create resources in the default network if no network is specified -- deletion forces explicit network selection
+- The org policy `compute.skipDefaultNetworkCreation` prevents the default network from being created in new projects
+- If instances, load balancers, or other resources use the default network, migrate them before deletion
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify default network is gone
+gcloud compute networks list --project="$PROJECT_ID" \
+  --filter="name=default" \
+  --format="value(name)"
+# Expected: no output
+
+# Or verify its firewall rules are restricted
+gcloud compute firewall-rules list --project="$PROJECT_ID" \
+  --filter="network:default" \
+  --format="table(name,allowed,sourceRanges)"
+# Expected: no overly permissive rules
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Networks ==="
+  gcloud compute networks list --project="$PROJECT_ID" --format=json
+
+  echo ""
+  echo "=== Default Network Firewall Rules ==="
+  gcloud compute firewall-rules list --project="$PROJECT_ID" \
+    --filter="network:default" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Org Policy: Skip Default Network ==="
+  gcloud org-policies describe constraints/compute.skipDefaultNetworkCreation \
+    --organization="$ORG_ID" 2>/dev/null || echo "Not set"
+} > "$EVIDENCE_DIR/default-network-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Cloud KMS Controls
+
+### 32. Key Rotation (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# List all keyrings and keys with rotation settings
+# Check each location where keyrings may exist
+for LOCATION in global us us-central1; do
+  for KEYRING in $(gcloud kms keyrings list --location="$LOCATION" --project="$PROJECT_ID" \
+    --format="value(name.basename())" 2>/dev/null); do
+    for KEY in $(gcloud kms keys list \
+      --keyring="$KEYRING" --location="$LOCATION" --project="$PROJECT_ID" \
+      --format="value(name.basename())" 2>/dev/null); do
+      ROTATION=$(gcloud kms keys describe "$KEY" \
+        --keyring="$KEYRING" --location="$LOCATION" --project="$PROJECT_ID" \
+        --format="value(rotationPeriod)" 2>/dev/null)
+      NEXT=$(gcloud kms keys describe "$KEY" \
+        --keyring="$KEYRING" --location="$LOCATION" --project="$PROJECT_ID" \
+        --format="value(nextRotationTime)" 2>/dev/null)
+      if [ -n "$ROTATION" ]; then
+        echo "OK: $KEY (keyring=$KEYRING, location=$LOCATION) rotation=$ROTATION next=$NEXT"
+      else
+        echo "FAIL: $KEY (keyring=$KEYRING, location=$LOCATION) NO ROTATION configured"
+      fi
+    done
+  done
+done
+```
+- PASS: all encryption keys have automatic rotation configured (90 days recommended)
+- FAIL: any key has no rotation period set
+
+**FIX** -- remediate if failing:
+```bash
+KEYRING="soc2-keyring"
+KEY_NAME="your-key"
+LOCATION="us"
+
+# Enable automatic rotation every 90 days
+gcloud kms keys update "$KEY_NAME" \
+  --keyring="$KEYRING" \
+  --location="$LOCATION" \
+  --rotation-period=90d \
+  --next-rotation-time=$(date -u -v+90d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+    || date -u -d "+90 days" +%Y-%m-%dT%H:%M:%SZ) \
+  --project="$PROJECT_ID"
+```
+Gotchas:
+- Rotation creates a new key version -- old versions are still used to decrypt data encrypted with them
+- Only symmetric encryption keys support automatic rotation
+- Asymmetric keys must be rotated manually (create new version, update references)
+- Minimum rotation period is 1 day; recommended is 90 days for SOC 2
+- Key rotation does NOT re-encrypt existing data -- data remains encrypted with the key version used at write time
+- To re-encrypt with the latest key version, read and rewrite the data
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud kms keys describe "$KEY_NAME" \
+  --keyring="$KEYRING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID" \
+  --format="yaml(rotationPeriod,nextRotationTime,primary.state)"
+# Expected: rotationPeriod: 7776000s (90 days), nextRotationTime set, primary.state: ENABLED
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== KMS Key Rotation Status ==="
+  for LOCATION in global us us-central1; do
+    for KEYRING in $(gcloud kms keyrings list --location="$LOCATION" --project="$PROJECT_ID" \
+      --format="value(name.basename())" 2>/dev/null); do
+      for KEY in $(gcloud kms keys list --keyring="$KEYRING" --location="$LOCATION" \
+        --project="$PROJECT_ID" --format="value(name.basename())" 2>/dev/null); do
+        echo "--- $KEY (keyring=$KEYRING, location=$LOCATION) ---"
+        gcloud kms keys describe "$KEY" \
+          --keyring="$KEYRING" --location="$LOCATION" --project="$PROJECT_ID" \
+          --format="json(rotationPeriod,nextRotationTime,primary,versionTemplate)" 2>/dev/null
+      done
+    done
+  done
+} > "$EVIDENCE_DIR/kms-rotation-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 33. IAM Policies on Keyrings (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Check IAM policies on each keyring for overly permissive bindings
+for LOCATION in global us us-central1; do
+  for KEYRING in $(gcloud kms keyrings list --location="$LOCATION" --project="$PROJECT_ID" \
+    --format="value(name.basename())" 2>/dev/null); do
+    echo "=== $KEYRING ($LOCATION) ==="
+    gcloud kms keyrings get-iam-policy "$KEYRING" \
+      --location="$LOCATION" \
+      --project="$PROJECT_ID" \
+      --format="table(bindings.role,bindings.members)"
+
+    # Check for broad bindings
+    BROAD=$(gcloud kms keyrings get-iam-policy "$KEYRING" \
+      --location="$LOCATION" \
+      --project="$PROJECT_ID" \
+      --flatten="bindings[].members" \
+      --filter="bindings.members:(allUsers OR allAuthenticatedUsers OR domain:)" \
+      --format="value(bindings.members)" 2>/dev/null)
+    if [ -n "$BROAD" ]; then
+      echo "FAIL: Overly broad access detected: $BROAD"
+    fi
+  done
+done
+```
+- PASS: keyring IAM policies follow least privilege -- only specific service accounts and admin users
+- FAIL: broad domain-wide access, `allUsers`, or unnecessary `roles/cloudkms.admin` bindings
+
+**FIX** -- remediate if failing:
+```bash
+KEYRING="soc2-keyring"
+LOCATION="us"
+
+# Remove overly broad binding
+gcloud kms keyrings remove-iam-policy-binding "$KEYRING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID" \
+  --member="domain:example.com" \
+  --role="roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+# Add specific least-privilege bindings
+# Encrypt/decrypt for application service accounts
+gcloud kms keyrings add-iam-policy-binding "$KEYRING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID" \
+  --member="serviceAccount:app-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+# Admin for security team only
+gcloud kms keyrings add-iam-policy-binding "$KEYRING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID" \
+  --member="group:security-admins@example.com" \
+  --role="roles/cloudkms.admin"
+```
+Gotchas:
+- `roles/cloudkms.admin` can manage keys but NOT encrypt/decrypt -- separation of duties
+- `roles/cloudkms.cryptoKeyEncrypterDecrypter` can encrypt/decrypt but NOT manage keys
+- Never grant `roles/owner` at the keyring level -- use specific KMS roles
+- IAM policies can be set at keyring or individual key level -- key-level is more granular
+- Destroying a key version requires `roles/cloudkms.admin` -- restrict this carefully
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud kms keyrings get-iam-policy "$KEYRING" \
+  --location="$LOCATION" \
+  --project="$PROJECT_ID" \
+  --format="table(bindings.role,bindings.members)"
+# Expected: only specific service accounts and admin groups
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== KMS Keyring IAM Policies ==="
+  for LOCATION in global us us-central1; do
+    for KEYRING in $(gcloud kms keyrings list --location="$LOCATION" --project="$PROJECT_ID" \
+      --format="value(name.basename())" 2>/dev/null); do
+      echo "--- $KEYRING ($LOCATION) ---"
+      gcloud kms keyrings get-iam-policy "$KEYRING" \
+        --location="$LOCATION" --project="$PROJECT_ID" --format=json
+    done
+  done
+} > "$EVIDENCE_DIR/kms-iam-policies-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 34. Key Usage Audit (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Cloud KMS operations are automatically logged in Admin Activity and Data Access audit logs.
+# Verify KMS audit logs are flowing:
+gcloud logging read \
+  'resource.type="cloudkms_cryptokey" OR resource.type="cloudkms_cryptokeyversion"' \
+  --project="$PROJECT_ID" \
+  --limit=10 \
+  --format="table(timestamp,protoPayload.methodName,protoPayload.authenticationInfo.principalEmail,protoPayload.resourceName)"
+
+# Check Data Access logs for encrypt/decrypt operations
+gcloud logging read \
+  'protoPayload.serviceName="cloudkms.googleapis.com" AND logName:"data_access"' \
+  --project="$PROJECT_ID" \
+  --limit=10 \
+  --format="table(timestamp,protoPayload.methodName,protoPayload.authenticationInfo.principalEmail)" 2>/dev/null
+```
+- PASS: KMS audit logs show recent operations (key management and encrypt/decrypt)
+- FAIL: no KMS audit logs (Data Access logs may not be enabled -- see control 8)
+
+**FIX** -- remediate if failing:
+```bash
+# KMS admin operations (create, rotate, destroy keys) are always logged via Admin Activity logs.
+# Encrypt/decrypt operations are logged via Data Access logs -- these must be enabled.
+# See control 8 for enabling Data Access logs.
+
+# Verify Data Access logs are enabled for KMS specifically:
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs[] | select(.service == "allServices" or .service == "cloudkms.googleapis.com")'
+
+# If not enabled for allServices, enable for KMS:
+gcloud projects get-iam-policy "$PROJECT_ID" --format=json > /tmp/project-policy.json
+
+jq '.auditConfigs += [{
+  "service": "cloudkms.googleapis.com",
+  "auditLogConfigs": [
+    {"logType": "ADMIN_READ"},
+    {"logType": "DATA_READ"},
+    {"logType": "DATA_WRITE"}
+  ]
+}]' /tmp/project-policy.json > /tmp/project-policy-updated.json
+
+gcloud projects set-iam-policy "$PROJECT_ID" /tmp/project-policy-updated.json
+```
+Gotchas:
+- Admin Activity logs for KMS are always on (key creation, rotation, destruction)
+- Data Access logs for KMS (encrypt/decrypt operations) require explicit enablement
+- High-volume encrypt/decrypt operations can generate significant log volume -- consider exempting automated service accounts from DATA_READ
+- KMS audit logs include the key name and version used but NOT the plaintext data
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verify Data Access logs for KMS are enabled
+gcloud projects get-iam-policy "$PROJECT_ID" \
+  --format=json | jq '.auditConfigs[] | select(.service == "allServices" or .service == "cloudkms.googleapis.com")'
+# Expected: DATA_READ, DATA_WRITE, ADMIN_READ log types
+
+# Verify logs are flowing
+gcloud logging read \
+  'protoPayload.serviceName="cloudkms.googleapis.com"' \
+  --project="$PROJECT_ID" \
+  --limit=5 \
+  --format="table(timestamp,protoPayload.methodName)"
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== KMS Audit Log Configuration ==="
+  gcloud projects get-iam-policy "$PROJECT_ID" \
+    --format=json | jq '.auditConfigs[] | select(.service == "allServices" or .service == "cloudkms.googleapis.com")'
+
+  echo ""
+  echo "=== Recent KMS Admin Activity ==="
+  gcloud logging read \
+    'resource.type="cloudkms_cryptokey" AND logName:"activity"' \
+    --project="$PROJECT_ID" --limit=25 --format=json
+
+  echo ""
+  echo "=== Recent KMS Data Access ==="
+  gcloud logging read \
+    'protoPayload.serviceName="cloudkms.googleapis.com" AND logName:"data_access"' \
+    --project="$PROJECT_ID" --limit=25 --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/kms-audit-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Cloud Monitoring Controls
+
+### 35. Log-Based Metrics (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# List all custom log-based metrics
+gcloud logging metrics list --project="$PROJECT_ID" \
+  --format="table(name,description,filter)"
+
+# Check for expected security metrics
+EXPECTED_METRICS=(
+  "unauthorized-access-attempts"
+  "iam-policy-changes"
+  "sa-key-creation"
+  "firewall-changes"
+  "custom-role-changes"
+  "vpc-network-changes"
+  "cloud-storage-permission-changes"
+  "route-changes"
+  "cloudsql-config-changes"
+)
+echo ""
+echo "=== Expected Metrics Check ==="
+for METRIC in "${EXPECTED_METRICS[@]}"; do
+  gcloud logging metrics describe "$METRIC" --project="$PROJECT_ID" 2>/dev/null \
+    && echo "FOUND: $METRIC" \
+    || echo "MISSING: $METRIC"
+done
+```
+- PASS: all expected security metrics exist
+- FAIL: missing metrics
+
+**FIX** -- remediate if failing:
+```bash
+# Unauthorized access attempts (403 errors)
+gcloud logging metrics create unauthorized-access-attempts \
+  --project="$PROJECT_ID" \
+  --description="Unauthorized API access attempts (permission denied)" \
+  --log-filter='protoPayload.status.code=7 OR protoPayload.status.message="PERMISSION_DENIED"'
+
+# VPC network changes
+gcloud logging metrics create vpc-network-changes \
+  --project="$PROJECT_ID" \
+  --description="VPC network creation, deletion, or modification" \
+  --log-filter='resource.type="gce_network" AND (protoPayload.methodName:"compute.networks.insert" OR protoPayload.methodName:"compute.networks.delete" OR protoPayload.methodName:"compute.networks.patch" OR protoPayload.methodName:"compute.networks.update" OR protoPayload.methodName:"compute.subnetworks.insert" OR protoPayload.methodName:"compute.subnetworks.delete" OR protoPayload.methodName:"compute.subnetworks.patch")'
+
+# Cloud Storage IAM/permission changes
+gcloud logging metrics create cloud-storage-permission-changes \
+  --project="$PROJECT_ID" \
+  --description="Cloud Storage bucket IAM or ACL changes" \
+  --log-filter='resource.type="gcs_bucket" AND protoPayload.methodName="storage.setIamPermissions"'
+
+# Route changes
+gcloud logging metrics create route-changes \
+  --project="$PROJECT_ID" \
+  --description="VPC route creation or deletion" \
+  --log-filter='resource.type="gce_route" AND (protoPayload.methodName:"compute.routes.insert" OR protoPayload.methodName:"compute.routes.delete")'
+
+# SQL instance configuration changes
+gcloud logging metrics create cloudsql-config-changes \
+  --project="$PROJECT_ID" \
+  --description="Cloud SQL instance configuration changes" \
+  --log-filter='protoPayload.methodName="cloudsql.instances.update" OR protoPayload.methodName="cloudsql.instances.patch"'
+```
+Gotchas:
+- Log-based metrics only count log entries AFTER metric creation -- no historical data
+- Metrics created in control 11 (iam-policy-changes, sa-key-creation, firewall-changes, custom-role-changes) are listed here for completeness
+- Filter syntax must match Cloud Logging filter language exactly
+- Test filters first with `gcloud logging read 'YOUR_FILTER' --limit=5` to verify they match expected events
+- Custom metrics appear under `logging.googleapis.com/user/METRIC_NAME` in Cloud Monitoring
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud logging metrics list --project="$PROJECT_ID" \
+  --format="table(name,filter)"
+# Expected: all security metrics listed
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Log-Based Metrics ==="
+  gcloud logging metrics list --project="$PROJECT_ID" --format=json
+} > "$EVIDENCE_DIR/log-based-metrics-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 36. Alerting Policies (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all alerting policies
+gcloud alpha monitoring policies list --project="$PROJECT_ID" \
+  --format="table(displayName,enabled,conditions.displayName)" 2>/dev/null
+
+# Check notification channels
+gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --format="table(displayName,type,enabled)" 2>/dev/null
+```
+- PASS: alerting policies exist for each log-based metric, with active notification channels
+- FAIL: no alerting policies or no notification channels
+
+**FIX** -- remediate if failing:
+```bash
+# Create notification channels (if not already done in control 11)
+
+# Email channel
+EMAIL_CHANNEL=$(gcloud alpha monitoring channels create \
+  --display-name="Security Alerts Email" \
+  --type=email \
+  --channel-labels="email_address=security@example.com" \
+  --project="$PROJECT_ID" \
+  --format="value(name)" 2>/dev/null)
+
+# Slack channel (requires Slack workspace integration)
+# SLACK_CHANNEL=$(gcloud alpha monitoring channels create \
+#   --display-name="Security Alerts Slack" \
+#   --type=slack \
+#   --channel-labels="channel_name=#security-alerts,auth_token=xoxb-YOUR-TOKEN" \
+#   --project="$PROJECT_ID" \
+#   --format="value(name)" 2>/dev/null)
+
+# PagerDuty channel
+# PD_CHANNEL=$(gcloud alpha monitoring channels create \
+#   --display-name="Security PagerDuty" \
+#   --type=pagerduty \
+#   --channel-labels="service_key=YOUR_PD_KEY" \
+#   --project="$PROJECT_ID" \
+#   --format="value(name)" 2>/dev/null)
+
+# Create alerting policy for unauthorized access attempts
+cat > /tmp/unauth-alert.json << EOF
+{
+  "displayName": "Unauthorized Access Attempts Spike",
+  "conditions": [
+    {
+      "displayName": "Unauthorized access > 10 in 5 minutes",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/unauthorized-access-attempts\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 10,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["${EMAIL_CHANNEL}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/unauth-alert.json \
+  --project="$PROJECT_ID"
+
+# Create alerting policy for VPC network changes
+cat > /tmp/vpc-alert.json << EOF
+{
+  "displayName": "VPC Network Change Alert",
+  "conditions": [
+    {
+      "displayName": "VPC network modification detected",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/vpc-network-changes\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["${EMAIL_CHANNEL}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/vpc-alert.json \
+  --project="$PROJECT_ID"
+
+# Create alerting policy for Cloud SQL config changes
+cat > /tmp/sql-alert.json << EOF
+{
+  "displayName": "Cloud SQL Configuration Change Alert",
+  "conditions": [
+    {
+      "displayName": "Cloud SQL config modified",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/cloudsql-config-changes\" AND resource.type=\"project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_COUNT"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": ["${EMAIL_CHANNEL}"],
+  "combiner": "OR",
+  "enabled": true
+}
+EOF
+gcloud alpha monitoring policies create \
+  --policy-from-file=/tmp/sql-alert.json \
+  --project="$PROJECT_ID"
+```
+Gotchas:
+- Each alerting policy requires at least one notification channel
+- Slack and PagerDuty channels require prior integration setup in the Cloud Console
+- Alert conditions use `alignmentPeriod` to aggregate -- 300s (5 minutes) is typical
+- `thresholdValue: 0` with `COMPARISON_GT` means "alert on any occurrence"
+- For noisy metrics (like unauthorized access), set a higher threshold to reduce false positives
+- Alerting policies can also be managed via Terraform (see Terraform section)
+
+**VERIFY** -- confirm the fix:
+```bash
+echo "=== Alerting Policies ==="
+gcloud alpha monitoring policies list --project="$PROJECT_ID" \
+  --format="table(displayName,enabled)" 2>/dev/null
+
+echo ""
+echo "=== Notification Channels ==="
+gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --format="table(displayName,type,enabled)" 2>/dev/null
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Alerting Policies ==="
+  gcloud alpha monitoring policies list --project="$PROJECT_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Notification Channels ==="
+  gcloud alpha monitoring channels list --project="$PROJECT_ID" --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/alerting-policies-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 37. Uptime Checks (TSC: A1.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+gcloud monitoring uptime list-configs --project="$PROJECT_ID" \
+  --format="table(displayName,monitoredResource.type,httpCheck.path,period)" 2>/dev/null \
+  || echo "No uptime checks configured"
+```
+- PASS: uptime checks exist for all production endpoints
+- FAIL: no uptime checks or missing coverage for critical endpoints
+
+**FIX** -- remediate if failing:
+```bash
+# Create uptime check for a production HTTPS endpoint
+cat > /tmp/uptime-check.json << 'EOF'
+{
+  "displayName": "Production API Health Check",
+  "monitoredResource": {
+    "type": "uptime_url",
+    "labels": {
+      "project_id": "PROJECT_ID_PLACEHOLDER",
+      "host": "api.example.com"
+    }
+  },
+  "httpCheck": {
+    "path": "/health",
+    "port": 443,
+    "useSsl": true,
+    "validateSsl": true,
+    "requestMethod": "GET",
+    "acceptedResponseStatusCodes": [
+      {"statusClass": "STATUS_CLASS_2XX"}
+    ]
+  },
+  "period": "60s",
+  "timeout": "10s",
+  "selectedRegions": [
+    "USA",
+    "EUROPE",
+    "ASIA_PACIFIC"
+  ]
+}
+EOF
+# Replace placeholder
+sed -i '' "s/PROJECT_ID_PLACEHOLDER/$PROJECT_ID/" /tmp/uptime-check.json 2>/dev/null \
+  || sed -i "s/PROJECT_ID_PLACEHOLDER/$PROJECT_ID/" /tmp/uptime-check.json
+
+gcloud monitoring uptime create --config-from-file=/tmp/uptime-check.json \
+  --project="$PROJECT_ID" 2>/dev/null \
+  || echo "Create uptime check via Console: https://console.cloud.google.com/monitoring/uptime"
+
+# Create alerting policy for uptime check failure
+# (Uptime checks auto-create a metric: monitoring.googleapis.com/uptime_check/check_passed)
+# Configure the alert via Console or Terraform for best results
+```
+Gotchas:
+- Uptime checks run from Google-owned IP ranges -- ensure firewall rules allow these IPs
+- Google publishes uptime check source IPs: `gcloud monitoring uptime list-ips`
+- Maximum 100 uptime checks per project (default quota)
+- Uptime check results are visible in Cloud Monitoring dashboards
+- For internal endpoints (private IP), use internal uptime checks (requires VPC access)
+- `gcloud monitoring uptime` commands may require `monitoring.uptimeCheckConfigs.create` permission
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud monitoring uptime list-configs --project="$PROJECT_ID" \
+  --format="table(displayName,monitoredResource.labels.host,httpCheck.path,period)"
+# Expected: uptime checks for all production endpoints
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Uptime Check Configurations ==="
+  gcloud monitoring uptime list-configs --project="$PROJECT_ID" --format=json 2>/dev/null
+
+  echo ""
+  echo "=== Uptime Check Source IPs ==="
+  gcloud monitoring uptime list-ips --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/uptime-checks-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 38. Notification Channels (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --format="table(displayName,type,enabled,verificationStatus)" 2>/dev/null
+```
+- PASS: multiple notification channel types configured (email + at least one of: Slack, PagerDuty, SMS), all verified and enabled
+- FAIL: no channels, or only unverified channels
+
+**FIX** -- remediate if failing:
+```bash
+# Email notification channel
+gcloud alpha monitoring channels create \
+  --display-name="Security Team Email" \
+  --type=email \
+  --channel-labels="email_address=security@example.com" \
+  --project="$PROJECT_ID"
+
+# Additional email channel for on-call
+gcloud alpha monitoring channels create \
+  --display-name="On-Call Email" \
+  --type=email \
+  --channel-labels="email_address=oncall@example.com" \
+  --project="$PROJECT_ID"
+
+# Slack integration (requires setup in Cloud Console first):
+# 1. Go to https://console.cloud.google.com/monitoring/settings/notification
+# 2. Click "Add New" under Slack
+# 3. Authorize the Google Cloud Monitoring Slack app
+# 4. Select the channel
+
+# PagerDuty integration (requires PagerDuty service key):
+# 1. In PagerDuty, create a new Service with Google Cloud Monitoring integration
+# 2. Copy the integration key
+# gcloud alpha monitoring channels create \
+#   --display-name="PagerDuty Security" \
+#   --type=pagerduty \
+#   --channel-labels="service_key=YOUR_INTEGRATION_KEY" \
+#   --project="$PROJECT_ID"
+
+# Verify email channels (sends verification email)
+for CHANNEL_ID in $(gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --filter="type=email AND verificationStatus!=VERIFIED" \
+  --format="value(name.basename())" 2>/dev/null); do
+  gcloud alpha monitoring channels verify "$CHANNEL_ID" --project="$PROJECT_ID" 2>/dev/null
+done
+```
+Gotchas:
+- Email channels must be verified before they receive alerts
+- Slack and PagerDuty integrations require initial setup in the Cloud Console (not CLI-only)
+- For SOC 2, auditors want to see at least two notification methods (redundancy)
+- Notification channels are per-project -- for organization-wide alerts, configure in a central monitoring project
+- Test each channel by triggering a test notification from the Cloud Console
+
+**VERIFY** -- confirm the fix:
+```bash
+gcloud alpha monitoring channels list --project="$PROJECT_ID" \
+  --format="table(displayName,type,enabled,verificationStatus)" 2>/dev/null
+# Expected: multiple channels, all enabled and verified
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+{
+  echo "=== Notification Channels ==="
+  gcloud alpha monitoring channels list --project="$PROJECT_ID" --format=json 2>/dev/null
+} > "$EVIDENCE_DIR/notification-channels-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Terraform GCP Module
+
+A complete, production-ready Terraform module that deploys all foundational SOC 2 controls on GCP.
+
+```hcl
+# ============================================================================
+# SOC 2 GCP Controls - Complete Terraform Module
+# ============================================================================
+# Usage:
+#   module "soc2_gcp" {
+#     source              = "./modules/soc2-gcp"
+#     project_id          = "my-project"
+#     org_id              = "123456789"
+#     region              = "us-central1"
+#     security_email      = "security@example.com"
+#     log_retention_days  = 365
+#   }
+# ============================================================================
+
+variable "project_id" {
+  description = "GCP project ID"
+  type        = string
+}
+
+variable "org_id" {
+  description = "GCP organization ID"
+  type        = string
+}
+
+variable "region" {
+  description = "Default GCP region"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "security_email" {
+  description = "Email address for security alerts"
+  type        = string
+}
+
+variable "log_retention_days" {
+  description = "Number of days to retain logs in Cloud Storage"
+  type        = number
+  default     = 365
+}
+
+variable "kms_rotation_period" {
+  description = "KMS key rotation period in seconds (default: 90 days)"
+  type        = string
+  default     = "7776000s"
+}
+
+variable "flow_log_sampling" {
+  description = "VPC Flow Log sampling rate (0.0 to 1.0)"
+  type        = number
+  default     = 0.5
+}
+
+variable "labels" {
+  description = "Labels to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+locals {
+  default_labels = merge(var.labels, {
+    managed_by = "terraform"
+    module     = "soc2-gcp"
+    purpose    = "soc2-compliance"
+  })
+
+  project_number = data.google_project.current.number
+}
+
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+# ============================================================================
+# Organization Policies
+# ============================================================================
+
+resource "google_org_policy_policy" "uniform_bucket_access" {
+  name   = "organizations/${var.org_id}/policies/storage.uniformBucketLevelAccess"
+  parent = "organizations/${var.org_id}"
+
+  spec {
+    rules {
+      enforce = "TRUE"
+    }
+  }
+}
+
+resource "google_org_policy_policy" "public_access_prevention" {
+  name   = "organizations/${var.org_id}/policies/storage.publicAccessPrevention"
+  parent = "organizations/${var.org_id}"
+
+  spec {
+    rules {
+      enforce = "TRUE"
+    }
+  }
+}
+
+resource "google_org_policy_policy" "skip_default_network" {
+  name   = "organizations/${var.org_id}/policies/compute.skipDefaultNetworkCreation"
+  parent = "organizations/${var.org_id}"
+
+  spec {
+    rules {
+      enforce = "TRUE"
+    }
+  }
+}
+
+# ============================================================================
+# Cloud Audit Log Configuration (Data Access Logs for All Services)
+# ============================================================================
+
+resource "google_project_iam_audit_config" "all_services" {
+  project = var.project_id
+  service = "allServices"
+
+  audit_log_config {
+    log_type = "ADMIN_READ"
+  }
+  audit_log_config {
+    log_type = "DATA_READ"
+  }
+  audit_log_config {
+    log_type = "DATA_WRITE"
+  }
+}
+
+# ============================================================================
+# Log Sink to Cloud Storage with Retention
+# ============================================================================
+
+resource "google_storage_bucket" "audit_logs" {
+  name          = "${var.project_id}-soc2-audit-logs"
+  project       = var.project_id
+  location      = upper(var.region)
+  force_destroy = false
+  labels        = local.default_labels
+
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+
+  versioning {
+    enabled = true
+  }
+
+  retention_policy {
+    is_locked        = false  # Set to true after validation to make immutable
+    retention_period = var.log_retention_days * 86400
+  }
+
+  lifecycle_rule {
+    action {
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
+    condition {
+      age = 90
+    }
+  }
+
+  lifecycle_rule {
+    action {
+      type          = "SetStorageClass"
+      storage_class = "COLDLINE"
+    }
+    condition {
+      age = 365
+    }
+  }
+
+  lifecycle_rule {
+    action {
+      type          = "SetStorageClass"
+      storage_class = "ARCHIVE"
+    }
+    condition {
+      age = 730
+    }
+  }
+}
+
+resource "google_logging_project_sink" "audit_log_sink" {
+  name        = "soc2-audit-log-archive"
+  project     = var.project_id
+  destination = "storage.googleapis.com/${google_storage_bucket.audit_logs.name}"
+  filter      = "logName:\"cloudaudit.googleapis.com\""
+
+  unique_writer_identity = true
+}
+
+resource "google_storage_bucket_iam_member" "sink_writer" {
+  bucket = google_storage_bucket.audit_logs.name
+  role   = "roles/storage.objectCreator"
+  member = google_logging_project_sink.audit_log_sink.writer_identity
+}
+
+# ============================================================================
+# Cloud Logging Bucket Retention
+# ============================================================================
+
+resource "google_logging_project_bucket_config" "default" {
+  project        = var.project_id
+  location       = "global"
+  bucket_id      = "_Default"
+  retention_days = var.log_retention_days
+}
+
+# ============================================================================
+# Security Command Center (enablement is org-level via Console)
+# SCC notification export to Pub/Sub
+# ============================================================================
+
+resource "google_pubsub_topic" "scc_findings" {
+  name    = "scc-findings-export"
+  project = var.project_id
+  labels  = local.default_labels
+}
+
+resource "google_pubsub_subscription" "scc_findings_sub" {
+  name    = "scc-findings-sub"
+  topic   = google_pubsub_topic.scc_findings.name
+  project = var.project_id
+  labels  = local.default_labels
+
+  ack_deadline_seconds = 60
+
+  expiration_policy {
+    ttl = ""  # Never expire
+  }
+}
+
+resource "google_scc_notification_config" "high_critical" {
+  config_id    = "soc2-high-critical-findings"
+  organization = var.org_id
+  description  = "Export HIGH and CRITICAL SCC findings to Pub/Sub"
+  pubsub_topic = google_pubsub_topic.scc_findings.id
+
+  streaming_config {
+    filter = "severity=\"HIGH\" OR severity=\"CRITICAL\""
+  }
+}
+
+# ============================================================================
+# Cloud KMS Key for Encryption
+# ============================================================================
+
+resource "google_kms_key_ring" "soc2" {
+  name     = "soc2-keyring"
+  location = var.region
+  project  = var.project_id
+}
+
+resource "google_kms_crypto_key" "storage" {
+  name            = "storage-encryption-key"
+  key_ring        = google_kms_key_ring.soc2.id
+  rotation_period = var.kms_rotation_period
+  purpose         = "ENCRYPT_DECRYPT"
+
+  labels = local.default_labels
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_kms_crypto_key" "cloudsql" {
+  name            = "cloudsql-encryption-key"
+  key_ring        = google_kms_key_ring.soc2.id
+  rotation_period = var.kms_rotation_period
+  purpose         = "ENCRYPT_DECRYPT"
+
+  labels = local.default_labels
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# ============================================================================
+# Log-Based Metrics
+# ============================================================================
+
+resource "google_logging_metric" "iam_policy_changes" {
+  name    = "iam-policy-changes"
+  project = var.project_id
+  filter  = "protoPayload.methodName=\"SetIamPolicy\" OR protoPayload.methodName=\"SetOrgPolicy\""
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_logging_metric" "sa_key_creation" {
+  name    = "sa-key-creation"
+  project = var.project_id
+  filter  = "protoPayload.methodName=\"google.iam.admin.v1.CreateServiceAccountKey\""
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_logging_metric" "firewall_changes" {
+  name    = "firewall-changes"
+  project = var.project_id
+  filter  = "resource.type=\"gce_firewall_rule\" AND (protoPayload.methodName:\"compute.firewalls.insert\" OR protoPayload.methodName:\"compute.firewalls.update\" OR protoPayload.methodName:\"compute.firewalls.delete\" OR protoPayload.methodName:\"compute.firewalls.patch\")"
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_logging_metric" "unauthorized_access" {
+  name    = "unauthorized-access-attempts"
+  project = var.project_id
+  filter  = "protoPayload.status.code=7 OR protoPayload.status.message=\"PERMISSION_DENIED\""
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_logging_metric" "custom_role_changes" {
+  name    = "custom-role-changes"
+  project = var.project_id
+  filter  = "resource.type=\"iam_role\" AND (protoPayload.methodName:\"CreateRole\" OR protoPayload.methodName:\"UpdateRole\" OR protoPayload.methodName:\"DeleteRole\")"
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_logging_metric" "vpc_network_changes" {
+  name    = "vpc-network-changes"
+  project = var.project_id
+  filter  = "resource.type=\"gce_network\" AND (protoPayload.methodName:\"compute.networks.insert\" OR protoPayload.methodName:\"compute.networks.delete\" OR protoPayload.methodName:\"compute.networks.patch\")"
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+# ============================================================================
+# Notification Channel
+# ============================================================================
+
+resource "google_monitoring_notification_channel" "security_email" {
+  display_name = "Security Team Email"
+  type         = "email"
+  project      = var.project_id
+
+  labels = {
+    email_address = var.security_email
+  }
+}
+
+# ============================================================================
+# Alerting Policies
+# ============================================================================
+
+resource "google_monitoring_alert_policy" "iam_changes" {
+  display_name = "IAM Policy Change Alert"
+  project      = var.project_id
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "IAM policy change detected"
+
+    condition_threshold {
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.iam_policy_changes.name}\" AND resource.type=\"project\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "0s"
+
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.security_email.name
+  ]
+}
+
+resource "google_monitoring_alert_policy" "sa_key_creation" {
+  display_name = "Service Account Key Creation Alert"
+  project      = var.project_id
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "SA key created"
+
+    condition_threshold {
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.sa_key_creation.name}\" AND resource.type=\"project\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "0s"
+
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.security_email.name
+  ]
+}
+
+resource "google_monitoring_alert_policy" "firewall_changes" {
+  display_name = "Firewall Rule Change Alert"
+  project      = var.project_id
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "Firewall rule changed"
+
+    condition_threshold {
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.firewall_changes.name}\" AND resource.type=\"project\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "0s"
+
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.security_email.name
+  ]
+}
+
+resource "google_monitoring_alert_policy" "unauthorized_access" {
+  display_name = "Unauthorized Access Attempts Spike"
+  project      = var.project_id
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "Unauthorized access > 10 in 5 minutes"
+
+    condition_threshold {
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.unauthorized_access.name}\" AND resource.type=\"project\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 10
+      duration        = "0s"
+
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.security_email.name
+  ]
+}
+
+# ============================================================================
+# VPC Flow Logs on All Subnets
+# ============================================================================
+# Note: VPC Flow Logs must be enabled per-subnet. If you manage subnets via
+# Terraform, add the log_config block to each google_compute_subnetwork resource:
+#
+#   resource "google_compute_subnetwork" "example" {
+#     name          = "example-subnet"
+#     ip_cidr_range = "10.0.0.0/24"
+#     region        = var.region
+#     network       = google_compute_network.vpc.id
+#     project       = var.project_id
+#
+#     log_config {
+#       aggregation_interval = "INTERVAL_5_SEC"
+#       flow_sampling        = var.flow_log_sampling
+#       metadata             = "INCLUDE_ALL_METADATA"
+#     }
+#   }
+#
+# For existing subnets not managed by Terraform, use the gcloud commands
+# in control 27 to enable flow logs.
+
+# ============================================================================
+# Outputs
+# ============================================================================
+
+output "audit_log_bucket" {
+  description = "Cloud Storage bucket for audit log archive"
+  value       = google_storage_bucket.audit_logs.name
+}
+
+output "kms_keyring" {
+  description = "KMS keyring for SOC 2 encryption keys"
+  value       = google_kms_key_ring.soc2.id
+}
+
+output "kms_storage_key" {
+  description = "KMS key for Cloud Storage encryption"
+  value       = google_kms_crypto_key.storage.id
+}
+
+output "kms_cloudsql_key" {
+  description = "KMS key for Cloud SQL encryption"
+  value       = google_kms_crypto_key.cloudsql.id
+}
+
+output "scc_pubsub_topic" {
+  description = "Pub/Sub topic for SCC finding exports"
+  value       = google_pubsub_topic.scc_findings.name
+}
+
+output "notification_channel" {
+  description = "Monitoring notification channel for security alerts"
+  value       = google_monitoring_notification_channel.security_email.name
+}
+
+output "log_sink" {
+  description = "Log sink for audit log archival"
+  value       = google_logging_project_sink.audit_log_sink.name
+}
+```
+
+---
+
+## Edge Cases and Gotchas
+
+### Cloud SQL Encryption Is Always On
+
+Cloud SQL instances are always encrypted at rest with Google-managed keys. Unlike AWS RDS where unencrypted instances are possible, GCP enforces encryption by default. CMEK (Customer-Managed Encryption Keys) is optional and provides:
+- Customer-controlled key lifecycle (rotation, destruction)
+- Separation of key management from data management
+- Required by some auditors for demonstrating full encryption control
+
+CMEK is a creation-time setting -- you cannot add CMEK to an existing instance. Migration requires export, new instance creation with CMEK, and import.
+
+### Data Access Logs Are NOT Enabled by Default
+
+This is the most commonly missed GCP SOC 2 control. Admin Activity logs are always on, but Data Access logs (who read what data) must be explicitly enabled per service or for `allServices`. Without Data Access logs, you have no visibility into:
+- Who accessed data in Cloud Storage, BigQuery, Cloud SQL
+- Who read secrets from Secret Manager
+- Who downloaded encryption keys from KMS
+
+Enable for `allServices` for compliance, but be aware of the cost implications on high-volume services.
+
+### Default VPC Network Has Permissive Firewall Rules
+
+Every GCP project gets a `default` network with four permissive firewall rules:
+- `default-allow-ssh` -- SSH (22) from `0.0.0.0/0`
+- `default-allow-rdp` -- RDP (3389) from `0.0.0.0/0`
+- `default-allow-icmp` -- ICMP from `0.0.0.0/0`
+- `default-allow-internal` -- all protocols/ports from `10.128.0.0/9`
+
+For SOC 2: delete the default network or restrict these rules. Use the org policy `compute.skipDefaultNetworkCreation` to prevent the default network in new projects.
+
+### Organization Policies Require Organization-Level Access
+
+Org policies (`gcloud org-policies`) operate at the organization level, not the project level. You need:
+- `roles/orgpolicy.policyAdmin` at the organization level
+- Organization ID (not project ID): `gcloud organizations list`
+
+If you only have project-level access, you can still audit individual resources (buckets, instances, etc.) but cannot set organization-wide constraints. Coordinate with your organization admin.
+
+### Some SCC Features Require Premium Tier
+
+Security Command Center tiers:
+
+| Feature | Standard (Free) | Premium (Paid) |
+|---|---|---|
+| Security Health Analytics | Yes | Yes |
+| Web Security Scanner | Yes | Yes |
+| Event Threat Detection | No | Yes |
+| Container Threat Detection | No | Yes |
+| VM Threat Detection | No | Yes |
+| Rapid Vulnerability Detection | No | Yes |
+| Attack Path Simulation | No | Yes |
+
+Standard tier covers most SOC 2 requirements (misconfiguration detection). Premium adds runtime threat detection comparable to AWS GuardDuty. The cost is per-resource per month.
+
+### Cloud Identity Is Separate from Google Workspace
+
+Cloud Identity provides identity management (users, groups, 2SV) independently from Google Workspace (email, docs, etc.). Key differences:
+- Cloud Identity Free: basic user/group management, 2SV, no Workspace apps
+- Cloud Identity Premium: adds device management, advanced security features
+- Google Workspace: includes Cloud Identity + Workspace apps
+
+For GCP-only environments without Google Workspace, use Cloud Identity Free for user management and 2SV enforcement. 2SV is managed in Google Admin Console (`admin.google.com`), not gcloud CLI.
+
+### VPC Flow Logs Cost Optimization
+
+| Sampling Rate | Log Volume | Cost Impact | Use Case |
+|---|---|---|---|
+| 1.0 (100%) | Full | Highest | Forensic analysis, strict compliance |
+| 0.5 (50%) | Half | Moderate | Recommended for SOC 2 |
+| 0.1 (10%) | Low | Lowest | High-traffic production environments |
+
+Aggregation interval also affects cost:
+- `INTERVAL_5_SEC` -- most granular, highest volume
+- `INTERVAL_10_MIN` -- least granular, lowest volume
+
+For SOC 2, 50% sampling with 5-second intervals is a reasonable default. Adjust based on traffic volume and budget.
+
+### Cloud Logging Retention vs Cloud Storage Retention
+
+| Log Type | Default Retention | Max in Cloud Logging | Recommended Approach |
+|---|---|---|---|
+| Admin Activity | 400 days (fixed) | 400 days (cannot change) | Sink to Cloud Storage for >400 days |
+| Data Access | 30 days | 3650 days | Increase _Default bucket or sink |
+| System Event | 400 days (fixed) | 400 days (cannot change) | Sink to Cloud Storage for >400 days |
+| Policy Denied | 30 days | 3650 days | Increase _Default bucket or sink |
+
+The most cost-effective approach: keep Cloud Logging `_Default` at 30 days, sink all audit logs to Cloud Storage with lifecycle tiering (Nearline at 90d, Coldline at 365d, Archive at 730d).
+
+
+---
+
+# Section 02-AZ: Azure Security Controls
+
+> Full DISCOVER-FIX-VERIFY-EVIDENCE cycle for every SOC 2 control on Azure.
+> Every command is copy-paste ready. Every control maps to a Trust Services Criteria (TSC).
+
+## Prerequisites
+
+```bash
+# Verify az CLI is configured and working
+az account show
+az account list --output table
+
+# Set reusable variables used throughout this document
+export SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+export TENANT_ID=$(az account show --query tenantId -o tsv)
+export RESOURCE_GROUP="your-rg-name"
+export LOCATION="eastus"
+export EVIDENCE_DIR="./soc2-evidence/$(date +%Y-%m-%d)"
+mkdir -p "$EVIDENCE_DIR"
+
+# Verify Microsoft Graph CLI extension is available (required for Entra ID controls)
+az extension add --name account 2>/dev/null
+az extension add --name log-analytics 2>/dev/null
+az extension add --name monitor-control-service 2>/dev/null
+
+# Login with sufficient permissions for Entra ID operations
+# You need Global Administrator or Security Administrator role for most Entra ID controls
+az login --tenant "$TENANT_ID"
+```
+
+---
+
+## Entra ID (Azure AD) Controls
+
+### 1. MFA Enforcement (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# List Conditional Access policies that enforce MFA
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?grantControls.builtInControls[?@ == 'mfa']].[displayName, state, conditions.users.includeUsers]" \
+  -o table
+```
+- PASS: at least one policy targets `All` users with MFA grant control and state is `enabled`
+- FAIL: no policy found, or policies are in `report-only` or `disabled` state, or policies target only specific groups (leaving gaps)
+
+**FIX** -- remediate if failing:
+```bash
+# Create a Conditional Access policy requiring MFA for all users
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "displayName": "SOC2 - Require MFA for all users",
+    "state": "enabledForReportingButNotEnforced",
+    "conditions": {
+      "users": {
+        "includeUsers": ["All"],
+        "excludeUsers": []
+      },
+      "applications": {
+        "includeApplications": ["All"]
+      },
+      "clientAppTypes": ["all"]
+    },
+    "grantControls": {
+      "operator": "OR",
+      "builtInControls": ["mfa"]
+    }
+  }'
+```
+Gotchas:
+- Start with `enabledForReportingButNotEnforced` (report-only mode) to avoid locking users out
+- Monitor the Conditional Access insights workbook for 1-2 weeks before switching to `enabled`
+- Conditional Access requires Entra ID P1 or P2 license -- without it, use per-user MFA (legacy, not recommended)
+- Exclude break-glass (emergency access) accounts from MFA but monitor them with alerts
+- Service principals and managed identities are not affected by user-targeted policies
+
+To switch from report-only to enforced after validation:
+```bash
+POLICY_ID="<policy-id-from-creation>"
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies/$POLICY_ID" \
+  --headers "Content-Type=application/json" \
+  --body '{"state": "enabled"}'
+```
+
+**VERIFY** -- confirm the fix:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?grantControls.builtInControls[?@ == 'mfa']].[displayName, state]" \
+  -o table
+# Expected: at least one policy with state "enabled" targeting All users
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  -o json > "$EVIDENCE_DIR/conditional-access-policies-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 2. Conditional Access Policies (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List all Conditional Access policies with their state and conditions
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[].[displayName, state, conditions.locations, conditions.platforms, conditions.signInRiskLevels, conditions.userRiskLevels]" \
+  -o json
+
+# Check for named locations (required for location-based policies)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/namedLocations" \
+  --query "value[].[displayName, '@odata.type']" \
+  -o table
+```
+- PASS: policies exist for location-based access, device compliance, and risk-based sign-in; named locations are defined for trusted office IPs
+- FAIL: no location-based or risk-based policies; no named locations defined
+
+**FIX** -- remediate if failing:
+```bash
+# Step 1: Create a named location for trusted office IPs
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/namedLocations" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "@odata.type": "#microsoft.graph.ipNamedLocation",
+    "displayName": "Corporate Office IPs",
+    "isTrusted": true,
+    "ipRanges": [
+      {"@odata.type": "#microsoft.graph.iPv4CidrRange", "cidrAddress": "203.0.113.0/24"},
+      {"@odata.type": "#microsoft.graph.iPv4CidrRange", "cidrAddress": "198.51.100.0/24"}
+    ]
+  }'
+
+# Step 2: Create policy to block access from untrusted locations for admins
+TRUSTED_LOCATION_ID="<id-from-step-1>"
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "displayName": "SOC2 - Block admin access from untrusted locations",
+    "state": "enabledForReportingButNotEnforced",
+    "conditions": {
+      "users": {
+        "includeRoles": [
+          "62e90394-69f5-4237-9190-012177145e10",
+          "194ae4cb-b126-40b2-bd5b-6091b380977d"
+        ]
+      },
+      "applications": {
+        "includeApplications": ["All"]
+      },
+      "locations": {
+        "includeLocations": ["All"],
+        "excludeLocations": ["'"$TRUSTED_LOCATION_ID"'", "AllTrusted"]
+      }
+    },
+    "grantControls": {
+      "operator": "OR",
+      "builtInControls": ["block"]
+    }
+  }'
+
+# Step 3: Create risk-based policy requiring MFA for medium+ risk sign-ins
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "displayName": "SOC2 - Require MFA for risky sign-ins",
+    "state": "enabledForReportingButNotEnforced",
+    "conditions": {
+      "users": {
+        "includeUsers": ["All"]
+      },
+      "applications": {
+        "includeApplications": ["All"]
+      },
+      "signInRiskLevels": ["medium", "high"]
+    },
+    "grantControls": {
+      "operator": "OR",
+      "builtInControls": ["mfa"]
+    }
+  }'
+```
+Gotchas:
+- Role GUIDs: `62e90394-...` = Global Administrator, `194ae4cb-...` = Security Administrator
+- Risk-based policies require Entra ID P2 license
+- Device compliance policies require devices enrolled in Intune (Microsoft Endpoint Manager)
+- Always start in report-only mode and validate before enforcing
+- Named locations support both IP ranges and country-based locations
+
+**VERIFY** -- confirm the fix:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[].[displayName, state]" \
+  -o table
+# Expected: policies for location-based, risk-based, and MFA requirements all present
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  -o json > "$EVIDENCE_DIR/conditional-access-full-$(date +%Y%m%d-%H%M%S).json"
+
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/namedLocations" \
+  -o json > "$EVIDENCE_DIR/named-locations-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 3. Privileged Identity Management (PIM) (TSC: CC6.1, CC6.2, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if PIM is configured for directory roles
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignmentScheduleInstances" \
+  --query "value[].[principal.displayName, roleDefinition.displayName, assignmentType, endDateTime]" \
+  -o json 2>/dev/null
+
+# List permanently active privileged role assignments (these should be minimal)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?\$expand=principal,roleDefinition" \
+  --query "value[].[principal.displayName, roleDefinition.displayName]" \
+  -o table
+
+# Count permanent Global Admins (should be <= 2 break-glass accounts)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/directoryRoles/filterByRoleId(roleId='62e90394-69f5-4237-9190-012177145e10')/members" \
+  --query "value[].[displayName, userPrincipalName]" \
+  -o table
+```
+- PASS: most admin roles are assigned as "eligible" (just-in-time), permanent assignments limited to 1-2 break-glass accounts
+- FAIL: multiple users with permanent Global Administrator or other privileged role assignments
+
+**FIX** -- remediate if failing:
+```bash
+# Convert a permanent admin assignment to PIM-eligible (just-in-time)
+# Step 1: Remove the permanent role assignment
+USER_OBJECT_ID="<user-object-id>"
+ROLE_DEFINITION_ID="62e90394-69f5-4237-9190-012177145e10"  # Global Administrator
+
+# Find the assignment ID
+ASSIGNMENT_ID=$(az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?\$filter=principalId eq '$USER_OBJECT_ID' and roleDefinitionId eq '$ROLE_DEFINITION_ID'" \
+  --query "value[0].id" -o tsv)
+
+# Remove permanent assignment
+az rest --method DELETE \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments/$ASSIGNMENT_ID"
+
+# Step 2: Create PIM-eligible assignment (user must activate when needed)
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleEligibilityScheduleRequests" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "action": "adminAssign",
+    "justification": "SOC2 compliance - converting to just-in-time access",
+    "roleDefinitionId": "'"$ROLE_DEFINITION_ID"'",
+    "directoryScopeId": "/",
+    "principalId": "'"$USER_OBJECT_ID"'",
+    "scheduleInfo": {
+      "startDateTime": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
+      "expiration": {
+        "type": "afterDuration",
+        "duration": "P365D"
+      }
+    }
+  }'
+
+# Step 3: Configure PIM role settings (max activation duration, require MFA, require justification)
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/policies/roleManagementPolicyAssignments" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "comment": "Enforcing PIM settings for SOC2 compliance"
+  }'
+```
+Gotchas:
+- PIM requires Entra ID P2 license
+- Always keep 2 break-glass accounts with permanent Global Administrator role (not subject to PIM)
+- Break-glass accounts must be cloud-only (not federated), have strong passwords stored in a physical safe, and be monitored with alerts
+- PIM activation duration should be set to maximum 8 hours for Global Administrator
+- Require MFA and justification on activation
+- Set up approval workflow for Global Administrator activations
+
+**VERIFY** -- confirm the fix:
+```bash
+# Check that most admin roles are now eligible (not permanent)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleEligibilityScheduleInstances" \
+  --query "value | length(@)"
+# Expected: count > 0 (eligible assignments exist)
+
+# Count remaining permanent Global Admins (should be <= 2)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/directoryRoles/filterByRoleId(roleId='62e90394-69f5-4237-9190-012177145e10')/members" \
+  --query "value | length(@)"
+# Expected: 2 or fewer
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?\$expand=principal,roleDefinition" \
+  -o json > "$EVIDENCE_DIR/pim-permanent-assignments-$(date +%Y%m%d-%H%M%S).json"
+
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/roleManagement/directory/roleEligibilityScheduleInstances" \
+  -o json > "$EVIDENCE_DIR/pim-eligible-assignments-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 4. Password Policy (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check tenant password policy (Entra ID manages this at tenant level)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/domains" \
+  --query "value[].[id, passwordValidityPeriodInDays, passwordNotificationWindowInDays]" \
+  -o table
+
+# Check if custom banned password list is enabled
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/settings" \
+  -o json 2>/dev/null | grep -A 5 "BannedPasswordCheckOnPremisesMode"
+
+# Check authentication methods policy
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/policies/authenticationMethodsPolicy" \
+  -o json
+```
+- PASS: password expiry is configured (90 days or based on risk), custom banned password list is enabled, smart lockout is configured
+- FAIL: default policy with no customization, no banned password list
+
+**FIX** -- remediate if failing:
+```bash
+# Set password expiration policy on the domain
+DOMAIN_NAME="yourdomain.onmicrosoft.com"
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/domains/$DOMAIN_NAME" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "passwordValidityPeriodInDays": 90,
+    "passwordNotificationWindowInDays": 14
+  }'
+
+# Enable custom banned password protection
+# Note: Custom banned passwords are configured in Entra ID portal:
+# 1. Azure Portal > Entra ID > Security > Authentication methods > Password protection
+# 2. Set "Enable password protection on Windows Server Active Directory" to Yes
+# 3. Set "Mode" to "Enforced"
+# 4. Add custom banned passwords (company name, product names, common weak passwords)
+
+# Configure smart lockout thresholds
+# This must be done via the Azure Portal:
+# Entra ID > Security > Authentication methods > Password protection
+# - Lockout threshold: 10 (failed attempts before lockout)
+# - Lockout duration: 60 seconds (minimum)
+```
+Gotchas:
+- Azure AD enforces a minimum password length of 8 characters and complexity rules by default -- you cannot reduce these but also cannot increase minimum length beyond 256 via standard settings
+- Microsoft recommends AGAINST password expiry if MFA is enforced (NIST 800-63B alignment) -- but many auditors still expect it
+- Custom banned password list supports up to 1000 words
+- Smart lockout is always on -- you can only customize thresholds
+- For hybrid environments (AD Connect sync), on-premises AD password policy takes precedence for synced users
+
+**VERIFY** -- confirm the fix:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/domains" \
+  --query "value[].[id, passwordValidityPeriodInDays, passwordNotificationWindowInDays]" \
+  -o table
+# Expected: passwordValidityPeriodInDays = 90, passwordNotificationWindowInDays = 14
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/domains" \
+  -o json > "$EVIDENCE_DIR/password-policy-$(date +%Y%m%d-%H%M%S).json"
+
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/policies/authenticationMethodsPolicy" \
+  -o json > "$EVIDENCE_DIR/auth-methods-policy-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 5. Guest User Audit (TSC: CC6.1, CC6.2, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all guest users in the tenant
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/users?\$filter=userType eq 'Guest'" \
+  --query "value[].[displayName, mail, createdDateTime, signInActivity.lastSignInDateTime]" \
+  -o table
+
+# Count guest users
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/users/\$count?\$filter=userType eq 'Guest'" \
+  --headers "ConsistencyLevel=eventual" \
+  -o tsv
+
+# Find guest users with directory role assignments (high risk)
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/directoryRoles" \
+  --query "value[].id" -o tsv | while read ROLE_ID; do
+    MEMBERS=$(az rest --method GET \
+      --uri "https://graph.microsoft.com/v1.0/directoryRoles/$ROLE_ID/members" \
+      --query "value[?userType=='Guest'].[displayName, mail]" -o tsv 2>/dev/null)
+    if [ -n "$MEMBERS" ]; then
+      ROLE_NAME=$(az rest --method GET \
+        --uri "https://graph.microsoft.com/v1.0/directoryRoles/$ROLE_ID" \
+        --query "displayName" -o tsv)
+      echo "ROLE: $ROLE_NAME"
+      echo "$MEMBERS"
+    fi
+done
+
+# Find guest users who have not signed in for 90+ days
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/users?\$filter=userType eq 'Guest'&\$select=displayName,mail,signInActivity" \
+  -o json | jq '.value[] | select(.signInActivity.lastSignInDateTime == null or
+    (.signInActivity.lastSignInDateTime | fromdateiso8601) < (now - 7776000)) |
+    {displayName, mail, lastSignIn: .signInActivity.lastSignInDateTime}'
+```
+- PASS: no guest users with privileged roles, all guests have recent sign-in activity, total guest count is reasonable
+- FAIL: guest users with admin roles, stale guests with no activity for 90+ days
+
+**FIX** -- remediate if failing:
+```bash
+# Remove a guest user with excessive permissions
+GUEST_USER_ID="<guest-object-id>"
+
+# Option A: Remove from specific role
+ROLE_ID="<directory-role-id>"
+az rest --method DELETE \
+  --uri "https://graph.microsoft.com/v1.0/directoryRoles/$ROLE_ID/members/$GUEST_USER_ID/\$ref"
+
+# Option B: Remove stale guest entirely
+az rest --method DELETE \
+  --uri "https://graph.microsoft.com/v1.0/users/$GUEST_USER_ID"
+
+# Configure guest access restrictions (limit what guests can see)
+az rest --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/policies/authorizationPolicy" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "guestUserRoleId": "2af84b1e-32c8-42b7-82bc-daa82404023b"
+  }'
+# Guest role IDs:
+# a0b1b346-... = Same as member users (most permissive, avoid)
+# 10dae51f-... = Limited access (default)
+# 2af84b1e-... = Restricted access (most restrictive, recommended)
+```
+Gotchas:
+- Contact the guest user's sponsor (the internal person who invited them) before removing
+- Removing a guest does not revoke existing tokens immediately -- token lifetime is up to 1 hour by default
+- Configure Entra ID Access Reviews to automate periodic guest user reviews
+- Consider setting up automatic guest expiry via lifecycle workflows
+
+**VERIFY** -- confirm the fix:
+```bash
+# Re-check guest users with roles
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/directoryRoles" \
+  --query "value[].id" -o tsv | while read ROLE_ID; do
+    az rest --method GET \
+      --uri "https://graph.microsoft.com/v1.0/directoryRoles/$ROLE_ID/members" \
+      --query "value[?userType=='Guest'].[displayName]" -o tsv 2>/dev/null
+done
+# Expected: no output (no guests in privileged roles)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/users?\$filter=userType eq 'Guest'&\$select=displayName,mail,createdDateTime,signInActivity" \
+  -o json > "$EVIDENCE_DIR/guest-users-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 6. App Registrations Audit (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all app registrations with their credential expiry
+az ad app list --all \
+  --query "[].{AppId:appId, DisplayName:displayName, SignInAudience:signInAudience, KeyCredCount:length(keyCredentials), PasswordCredCount:length(passwordCredentials)}" \
+  -o table
+
+# Find app registrations with expired credentials (still exist but expired)
+az ad app list --all -o json | jq '
+  .[] | select(
+    (.passwordCredentials[]? | .endDateTime | fromdateiso8601 < now) or
+    (.keyCredentials[]? | .endDateTime | fromdateiso8601 < now)
+  ) | {appId, displayName, expiredCreds: true}'
+
+# Find app registrations with overly permissive API permissions
+az ad app list --all -o json | jq '
+  .[] | select(
+    .requiredResourceAccess[]?.resourceAccess[]?.type == "Role"
+  ) | {appId, displayName,
+    permissions: [.requiredResourceAccess[].resourceAccess[] | select(.type == "Role") | .id]}'
+
+# Find apps with no owner (orphaned)
+for APP_ID in $(az ad app list --all --query "[].id" -o tsv); do
+  OWNER_COUNT=$(az ad app owner list --id "$APP_ID" --query "length(@)" -o tsv 2>/dev/null)
+  if [ "$OWNER_COUNT" = "0" ]; then
+    APP_NAME=$(az ad app show --id "$APP_ID" --query "displayName" -o tsv)
+    echo "ORPHANED: $APP_NAME ($APP_ID)"
+  fi
+done
+```
+- PASS: all apps have owners, no expired credentials, permissions follow least privilege
+- FAIL: orphaned apps, expired credentials, apps with Application-level (Role) permissions on Microsoft Graph for Directory.ReadWrite.All or similar
+
+**FIX** -- remediate if failing:
+```bash
+# Remove an unused or orphaned app registration
+APP_ID="<application-object-id>"
+az ad app delete --id "$APP_ID"
+
+# Remove expired credential from an app
+az ad app credential delete --id "$APP_ID" --key-id "<credential-key-id>"
+
+# Add an owner to an orphaned app (assign a responsible person)
+az ad app owner add --id "$APP_ID" --owner-object-id "<user-object-id>"
+
+# Remove overly permissive API permission
+az ad app permission delete --id "$APP_ID" --api "00000003-0000-0000-c000-000000000000"
+# Then re-add with least privilege permissions as needed
+```
+Gotchas:
+- Before deleting an app, check if any services depend on its client ID / service principal
+- Apps with "Application" permission type (vs "Delegated") can act without a user context -- these are higher risk
+- App registrations and enterprise applications (service principals) are different objects -- deleting the app registration also deletes the service principal
+- Multi-tenant apps (signInAudience = AzureADMultipleOrgs) can authenticate users from any tenant -- review these carefully
+
+**VERIFY** -- confirm the fix:
+```bash
+az ad app list --all \
+  --query "[].{AppId:appId, DisplayName:displayName, OwnerCount:length(owners || [])}" \
+  -o table
+# Expected: no orphaned apps, no expired credentials
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az ad app list --all -o json > "$EVIDENCE_DIR/app-registrations-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 7. Sign-In Risk Policy (TSC: CC6.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check for sign-in risk Conditional Access policy
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?conditions.signInRiskLevels != null].[displayName, state, conditions.signInRiskLevels]" \
+  -o json
+
+# Check for user risk Conditional Access policy
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?conditions.userRiskLevels != null].[displayName, state, conditions.userRiskLevels]" \
+  -o json
+
+# Review recent risky sign-ins
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identityProtection/riskyUsers" \
+  --query "value[].[userDisplayName, riskLevel, riskState, riskLastUpdatedDateTime]" \
+  -o table
+```
+- PASS: sign-in risk policy exists and is enabled, user risk policy exists and is enabled, risky users are being actively remediated
+- FAIL: no risk-based policies, or policies in report-only mode, or risky users with `atRisk` state unaddressed
+
+**FIX** -- remediate if failing:
+```bash
+# Create sign-in risk policy (require MFA for medium+, block for high)
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "displayName": "SOC2 - Sign-in risk: require MFA for medium+",
+    "state": "enabledForReportingButNotEnforced",
+    "conditions": {
+      "users": {
+        "includeUsers": ["All"],
+        "excludeUsers": []
+      },
+      "applications": {
+        "includeApplications": ["All"]
+      },
+      "signInRiskLevels": ["medium", "high"]
+    },
+    "grantControls": {
+      "operator": "OR",
+      "builtInControls": ["mfa"]
+    }
+  }'
+
+# Create user risk policy (require password change for high-risk users)
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --headers "Content-Type=application/json" \
+  --body '{
+    "displayName": "SOC2 - User risk: require password change for high",
+    "state": "enabledForReportingButNotEnforced",
+    "conditions": {
+      "users": {
+        "includeUsers": ["All"]
+      },
+      "applications": {
+        "includeApplications": ["All"]
+      },
+      "userRiskLevels": ["high"]
+    },
+    "grantControls": {
+      "operator": "AND",
+      "builtInControls": ["mfa", "passwordChange"]
+    }
+  }'
+
+# Dismiss or remediate risky users that have been addressed
+RISKY_USER_ID="<user-object-id>"
+az rest --method POST \
+  --uri "https://graph.microsoft.com/v1.0/identityProtection/riskyUsers/dismiss" \
+  --headers "Content-Type=application/json" \
+  --body '{"userIds": ["'"$RISKY_USER_ID"'"]}'
+```
+Gotchas:
+- Risk detection requires Entra ID P2 license
+- Sign-in risk is evaluated in real-time (at login), user risk is evaluated offline (background analysis)
+- Risk levels: low, medium, high -- high-risk sign-ins often indicate compromised credentials
+- Password change as a grant control requires self-service password reset (SSPR) to be enabled
+- Do not dismiss risky users without investigation -- review the risk detections first
+
+**VERIFY** -- confirm the fix:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?conditions.signInRiskLevels != null].[displayName, state]" \
+  -o table
+# Expected: sign-in and user risk policies present and enabled
+
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identityProtection/riskyUsers" \
+  --query "value[?riskState=='atRisk'] | length(@)"
+# Expected: 0 (all risky users addressed)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies" \
+  --query "value[?conditions.signInRiskLevels != null || conditions.userRiskLevels != null]" \
+  -o json > "$EVIDENCE_DIR/risk-policies-$(date +%Y%m%d-%H%M%S).json"
+
+az rest --method GET \
+  --uri "https://graph.microsoft.com/v1.0/identityProtection/riskyUsers" \
+  -o json > "$EVIDENCE_DIR/risky-users-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Azure Activity Log & Monitoring Controls
+
+### 8. Diagnostic Settings -- Activity Log Export (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if Activity Log diagnostic settings are configured
+az monitor diagnostic-settings subscription list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o table
+
+# Verify the diagnostic settings export to Log Analytics
+az monitor diagnostic-settings subscription list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, WorkspaceId:workspaceId, StorageAccount:storageAccountId, EventHub:eventHubAuthorizationRuleId}" \
+  -o table
+```
+- PASS: at least one diagnostic setting exists exporting to Log Analytics workspace (workspaceId is populated)
+- FAIL: empty list or no workspace destination configured
+
+**FIX** -- remediate if failing:
+```bash
+# First, create a Log Analytics workspace if one does not exist (see control #9)
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Create diagnostic setting for Activity Log
+az monitor diagnostic-settings subscription create \
+  --name "soc2-activity-log-export" \
+  --subscription "$SUBSCRIPTION_ID" \
+  --workspace "$WORKSPACE_ID" \
+  --logs '[
+    {"category": "Administrative", "enabled": true},
+    {"category": "Security", "enabled": true},
+    {"category": "ServiceHealth", "enabled": true},
+    {"category": "Alert", "enabled": true},
+    {"category": "Recommendation", "enabled": true},
+    {"category": "Policy", "enabled": true},
+    {"category": "Autoscale", "enabled": true},
+    {"category": "ResourceHealth", "enabled": true}
+  ]'
+```
+Gotchas:
+- Activity Log has only 90-day built-in retention -- exporting to Log Analytics gives you configurable retention (365+ days for SOC 2)
+- You need one diagnostic setting per subscription -- if you have multiple subscriptions, configure each
+- You can export to multiple destinations simultaneously (Log Analytics + Storage Account for long-term archival)
+- The command uses `subscription create` not `create` -- this is a subscription-level diagnostic setting, not a resource-level one
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor diagnostic-settings subscription list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, WorkspaceId:workspaceId}" \
+  -o table
+# Expected: diagnostic setting with a valid workspace ID
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor diagnostic-settings subscription list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/activity-log-diagnostic-settings-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 9. Log Analytics Workspace (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# List all Log Analytics workspaces
+az monitor log-analytics workspace list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, SKU:sku.name, RetentionDays:retentionInDays, DailyCapGB:workspaceCapping.dailyQuotaGb}" \
+  -o table
+```
+- PASS: workspace exists with retentionInDays >= 365 and appropriate SKU (PerGB2018 recommended)
+- FAIL: no workspace, or retention < 365 days
+
+**FIX** -- remediate if failing:
+```bash
+# Create Log Analytics workspace with 365-day retention
+az monitor log-analytics workspace create \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --location "$LOCATION" \
+  --retention-time 365 \
+  --sku PerGB2018
+
+# If workspace exists but retention is too low, update it
+az monitor log-analytics workspace update \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --retention-time 365
+```
+Gotchas:
+- Free tier (legacy) only allows 7 days retention -- use PerGB2018 SKU
+- Retention beyond 31 days incurs additional storage charges ($0.10/GB/month approximately)
+- Retention can be set from 30 to 730 days (workspace level), or use table-level retention for fine-grained control
+- Data ingestion costs are the primary cost driver -- set a daily cap for cost control (but be aware: hitting the cap stops ingestion)
+- Archive tier (up to 12 years) is available for long-term retention at reduced cost
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor log-analytics workspace show \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --query "{Name:name, RetentionDays:retentionInDays, SKU:sku.name}" \
+  -o table
+# Expected: RetentionDays = 365, SKU = PerGB2018
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor log-analytics workspace list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/log-analytics-workspaces-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 10. Activity Log Alerts (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List existing activity log alerts
+az monitor activity-log alert list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, Enabled:enabled, Conditions:condition.allOf[].{Field:field, Equals:equals}}" \
+  -o json
+```
+- PASS: alerts exist for policy assignment changes, role assignment changes, resource group deletions, network security group changes, and security solution modifications
+- FAIL: no activity log alerts, or missing critical event types
+
+**FIX** -- remediate if failing:
+```bash
+# Prerequisite: create an action group first (see control #12)
+ACTION_GROUP_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Insights/actionGroups/soc2-security-alerts"
+
+# Alert 1: Policy assignment changes
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-policy-changes" \
+  --description "Alert on Azure Policy assignment changes" \
+  --condition category=Administrative and operationName="Microsoft.Authorization/policyAssignments/write" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+
+# Alert 2: Role assignment changes
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-role-changes" \
+  --description "Alert on role assignment changes" \
+  --condition category=Administrative and operationName="Microsoft.Authorization/roleAssignments/write" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+
+# Alert 3: Resource group deletions
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-rg-deletions" \
+  --description "Alert on resource group deletions" \
+  --condition category=Administrative and operationName="Microsoft.Resources/subscriptions/resourceGroups/delete" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+
+# Alert 4: NSG rule changes
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-nsg-changes" \
+  --description "Alert on NSG rule changes" \
+  --condition category=Administrative and operationName="Microsoft.Network/networkSecurityGroups/securityRules/write" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+
+# Alert 5: Security solution changes (Defender)
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-security-solution-changes" \
+  --description "Alert on security solution modifications" \
+  --condition category=Security and operationName="Microsoft.Security/securitySolutions/write" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+
+# Alert 6: SQL Server firewall rule changes
+az monitor activity-log alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-sql-firewall-changes" \
+  --description "Alert on SQL Server firewall rule changes" \
+  --condition category=Administrative and operationName="Microsoft.Sql/servers/firewallRules/write" \
+  --action-group "$ACTION_GROUP_ID" \
+  --enabled true
+```
+Gotchas:
+- Activity log alerts are subscription-scoped -- they fire on events across the entire subscription
+- Each alert can have multiple conditions (AND logic) via the `--condition` parameter
+- These alerts are free -- they do not count toward Azure Monitor alert limits
+- For more complex alerting (log queries), use Log Analytics alert rules instead (see control #43)
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor activity-log alert list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, Enabled:enabled}" \
+  -o table
+# Expected: all 6 alerts listed and enabled
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor activity-log alert list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/activity-log-alerts-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 11. Azure Monitor Metric Alerts (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all metric alert rules
+az monitor metrics alert list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name, Enabled:enabled, Severity:severity, TargetResource:scopes}" \
+  -o table
+
+# Check for alerts on critical resources (VMs, databases, etc.)
+az monitor metrics alert list \
+  --resource-group "$RESOURCE_GROUP" \
+  -o json | jq '.[] | {name, severity, targetResource: .scopes[0], criteria: .criteria}'
+```
+- PASS: metric alerts exist for CPU, memory, disk, DTU utilization on critical resources
+- FAIL: no metric alerts configured
+
+**FIX** -- remediate if failing:
+```bash
+# Prerequisite: action group must exist (see control #12)
+ACTION_GROUP_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Insights/actionGroups/soc2-security-alerts"
+
+# Example: VM CPU > 90% for 5 minutes
+VM_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Compute/virtualMachines/your-vm-name"
+
+az monitor metrics alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-vm-high-cpu" \
+  --description "VM CPU utilization above 90%" \
+  --scopes "$VM_ID" \
+  --condition "avg Percentage CPU > 90" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --action "$ACTION_GROUP_ID"
+
+# Example: SQL Database DTU > 90%
+SQL_DB_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Sql/servers/your-server/databases/your-db"
+
+az monitor metrics alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-sql-high-dtu" \
+  --description "SQL Database DTU utilization above 90%" \
+  --scopes "$SQL_DB_ID" \
+  --condition "avg dtu_consumption_percent > 90" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --action "$ACTION_GROUP_ID"
+
+# Example: Storage Account availability drop
+STORAGE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/yourstorageaccount"
+
+az monitor metrics alert create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-storage-availability" \
+  --description "Storage Account availability below 99.9%" \
+  --scopes "$STORAGE_ID" \
+  --condition "avg Availability < 99.9" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 1 \
+  --action "$ACTION_GROUP_ID"
+```
+Gotchas:
+- Metric alerts cost approximately $0.10/month per alert rule
+- Use severity levels consistently: 0=Critical, 1=Error, 2=Warning, 3=Informational, 4=Verbose
+- Static thresholds are simpler but dynamic thresholds (machine learning based) reduce false positives
+- Multi-resource alerts can target all VMs in a subscription with a single rule
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor metrics alert list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name, Enabled:enabled, Severity:severity}" \
+  -o table
+# Expected: alerts for CPU, DTU, availability present and enabled
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor metrics alert list \
+  --resource-group "$RESOURCE_GROUP" \
+  -o json > "$EVIDENCE_DIR/metric-alerts-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 12. Action Groups (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all action groups
+az monitor action-group list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name, Enabled:enabled, EmailReceivers:emailReceivers[].emailAddress, SMSReceivers:smsReceivers[].phoneNumber, WebhookReceivers:webhookReceivers[].serviceUri}" \
+  -o json
+```
+- PASS: at least one action group exists with email and/or SMS receivers for security notifications
+- FAIL: no action groups, or action groups with no receivers
+
+**FIX** -- remediate if failing:
+```bash
+# Create an action group for security alerts
+az monitor action-group create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-security-alerts" \
+  --short-name "soc2sec" \
+  --action email security-team security@yourcompany.com \
+  --action email cto cto@yourcompany.com
+
+# Add SMS receiver for critical alerts
+az monitor action-group update \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-security-alerts" \
+  --add-action sms oncall-sms 1 5551234567
+
+# Add webhook for PagerDuty integration
+az monitor action-group update \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-security-alerts" \
+  --add-action webhook pagerduty "https://events.pagerduty.com/integration/<your-integration-key>/enqueue"
+
+# Create a separate action group for non-critical operational alerts
+az monitor action-group create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-ops-alerts" \
+  --short-name "soc2ops" \
+  --action email ops-team ops@yourcompany.com
+```
+Gotchas:
+- Short name must be 12 characters or fewer (used in SMS notifications)
+- Email receivers get a confirmation email -- they must click to confirm
+- SMS has rate limits: max 1 SMS every 5 minutes per phone number
+- Action groups support: email, SMS, voice call, webhook, ITSM connector, Azure Function, Logic App, Automation Runbook
+- Test the action group to verify delivery: `az monitor action-group test-notifications create ...`
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor action-group list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name, Enabled:enabled, EmailCount:length(emailReceivers)}" \
+  -o table
+# Expected: action groups with at least one email receiver
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor action-group list \
+  --resource-group "$RESOURCE_GROUP" \
+  -o json > "$EVIDENCE_DIR/action-groups-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Microsoft Defender for Cloud Controls
+
+### 13. Enable Defender for Cloud (TSC: CC6.1, CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check which Defender plans are enabled
+az security pricing list \
+  --query "[].{Name:name, Tier:pricingTier, FreeTrialRemaining:freeTrialRemainingTime}" \
+  -o table
+```
+- PASS: all relevant resource types show `pricingTier = Standard` (Servers, Storage, Sql, AppServices, KeyVaults, Arm, Dns, ContainerRegistry, Containers, etc.)
+- FAIL: any resource type shows `pricingTier = Free`
+
+**FIX** -- remediate if failing:
+```bash
+# Enable Defender for each resource type
+for PLAN in VirtualMachines SqlServers AppServices StorageAccounts \
+  SqlServerVirtualMachines KeyVaults Arm Dns OpenSourceRelationalDatabases \
+  Containers ContainerRegistry CloudPosture; do
+    az security pricing create \
+      --name "$PLAN" \
+      --tier Standard
+done
+```
+Gotchas:
+- Each Defender plan is billed separately -- review pricing at https://azure.microsoft.com/pricing/details/defender-for-cloud/
+- Defender for Servers has two sub-plans (P1 and P2) -- P2 includes vulnerability assessment, JIT VM access, and file integrity monitoring
+- Defender for Storage includes malware scanning (additional cost per GB scanned)
+- Free tier provides Security Score and basic recommendations but no threat detection
+- Changes take up to 24 hours to fully propagate
+- For Defender for Servers P2: `az security pricing create --name VirtualMachines --tier Standard --subplan P2`
+
+**VERIFY** -- confirm the fix:
+```bash
+az security pricing list \
+  --query "[].{Name:name, Tier:pricingTier}" \
+  -o table
+# Expected: all plans show Standard
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az security pricing list \
+  -o json > "$EVIDENCE_DIR/defender-pricing-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 14. Security Score Review (TSC: CC4.1, CC7.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Get current Secure Score
+az security secure-score list \
+  --query "[].{Name:displayName, Current:currentScore, Max:maxScore, Percentage:percentage}" \
+  -o table
+
+# List all recommendations sorted by severity
+az security assessment list \
+  --query "[?status.code=='Unhealthy'].{Name:displayName, Severity:metadata.severity, Status:status.code, Category:metadata.category}" \
+  -o table
+
+# Count unhealthy findings by severity
+az security assessment list \
+  --query "[?status.code=='Unhealthy'] | [].metadata.severity" \
+  -o tsv | sort | uniq -c | sort -rn
+```
+- PASS: Secure Score > 80%, no High-severity unhealthy recommendations
+- FAIL: Secure Score < 70%, or any High-severity findings remain unaddressed
+
+**FIX** -- remediate if failing:
+```bash
+# There is no single fix -- review each recommendation and remediate individually.
+# List the top 10 highest-impact unhealthy recommendations:
+az security assessment list \
+  --query "sort_by([?status.code=='Unhealthy'], &metadata.severity) | [0:10].{Name:displayName, Severity:metadata.severity, Remediation:metadata.remediationDescription}" \
+  -o json
+
+# Each recommendation links to specific remediation steps.
+# Common high-impact fixes:
+# - Enable MFA (control #1 above)
+# - Enable disk encryption on VMs
+# - Restrict public network access on storage accounts (control #19)
+# - Enable auditing on SQL servers (control #25)
+# - Configure NSG rules (control #31)
+```
+Gotchas:
+- Secure Score updates can take up to 24 hours after remediation
+- Some recommendations require Defender Standard tier to evaluate
+- "Not applicable" assessments do not affect the score
+- You can exempt specific resources from recommendations if they have a justified reason (but document the justification)
+
+**VERIFY** -- confirm the fix:
+```bash
+az security secure-score list \
+  --query "[].{Name:displayName, Current:currentScore, Max:maxScore, Percentage:percentage}" \
+  -o table
+# Expected: percentage > 80%
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az security secure-score list \
+  -o json > "$EVIDENCE_DIR/secure-score-$(date +%Y%m%d-%H%M%S).json"
+
+az security assessment list \
+  -o json > "$EVIDENCE_DIR/security-assessments-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 15. Continuous Export (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if continuous export is configured
+az security automation list \
+  --query "[].{Name:name, Enabled:isEnabled, Scope:scopes[0].scopePath, Targets:actions[0].actionType}" \
+  -o table
+```
+- PASS: at least one automation (continuous export) exists, is enabled, and targets Log Analytics or Event Hub
+- FAIL: no automations or all disabled
+
+**FIX** -- remediate if failing:
+```bash
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Create continuous export to Log Analytics
+# Note: This is best configured via Azure Portal or Terraform due to the complex JSON body.
+# Portal path: Defender for Cloud > Environment settings > [subscription] > Continuous export
+
+# Via CLI (the body is complex):
+az security automation create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-continuous-export" \
+  --scopes "[{\"scopePath\": \"/subscriptions/$SUBSCRIPTION_ID\"}]" \
+  --sources "[{\"eventSource\": \"Assessments\", \"ruleSets\": []}, {\"eventSource\": \"Alerts\", \"ruleSets\": []}, {\"eventSource\": \"SecureScores\", \"ruleSets\": []}]" \
+  --actions "[{\"actionType\": \"LogAnalytics\", \"workspaceResourceId\": \"$WORKSPACE_ID\"}]" \
+  --is-enabled true
+```
+Gotchas:
+- Continuous export sends data in near-real-time but there can be a delay of up to 30 minutes
+- Export to Event Hub is required for integration with external SIEMs (Splunk, Sentinel, etc.)
+- Export to Log Analytics is simpler and integrates directly with Azure Sentinel
+- You can export assessments (recommendations), alerts, and Secure Score changes
+- Each export configuration is scoped to a subscription
+
+**VERIFY** -- confirm the fix:
+```bash
+az security automation list \
+  --query "[].{Name:name, Enabled:isEnabled}" \
+  -o table
+# Expected: at least one enabled automation
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az security automation list \
+  -o json > "$EVIDENCE_DIR/continuous-export-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 16. Regulatory Compliance Dashboard (TSC: CC4.1)
+
+**DISCOVER** -- check current state:
+```bash
+# List enabled regulatory compliance standards
+az security regulatory-compliance-standards list \
+  --query "[].{Name:name, State:state}" \
+  -o table
+
+# Check if SOC 2 standard is enabled
+az security regulatory-compliance-standards list \
+  --query "[?contains(name, 'SOC') || contains(name, 'soc')]" \
+  -o table
+```
+- PASS: SOC 2 Type 2 standard appears in the list and state is `Passed` or assessments are in progress
+- FAIL: SOC 2 standard not enabled, or no regulatory standards at all
+
+**FIX** -- remediate if failing:
+```bash
+# Regulatory compliance standards are enabled via the Azure Portal or Terraform:
+# Portal path: Defender for Cloud > Regulatory compliance > Manage compliance policies
+# Select your subscription > Add standard > SOC 2 Type 2
+
+# Via Terraform (see Terraform module section below) or via REST API:
+az rest --method PUT \
+  --uri "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Security/regulatoryComplianceStandards/SOC-2?api-version=2019-01-01-preview" \
+  --headers "Content-Type=application/json" \
+  --body '{"properties": {"state": "Enabled"}}'
+```
+Gotchas:
+- Available standards include: Azure CIS, NIST 800-53, PCI DSS, SOC 2, ISO 27001, HIPAA, and more
+- Some standards require Defender for Cloud Standard tier
+- Compliance dashboard shows a percentage score per standard -- aim for 100% on all controls in scope
+- The dashboard reflects your actual resource configuration -- there is no way to "pass" without actually remediating
+
+**VERIFY** -- confirm the fix:
+```bash
+az security regulatory-compliance-standards list \
+  --query "[?contains(name, 'SOC')].[name, state]" \
+  -o table
+# Expected: SOC 2 standard present
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az security regulatory-compliance-standards list \
+  -o json > "$EVIDENCE_DIR/regulatory-compliance-$(date +%Y%m%d-%H%M%S).json"
+
+# Export detailed control assessment for SOC 2
+SOC2_STANDARD=$(az security regulatory-compliance-standards list \
+  --query "[?contains(name, 'SOC')].name | [0]" -o tsv)
+
+if [ -n "$SOC2_STANDARD" ]; then
+  az security regulatory-compliance-controls list \
+    --standard-name "$SOC2_STANDARD" \
+    -o json > "$EVIDENCE_DIR/soc2-controls-detail-$(date +%Y%m%d-%H%M%S).json"
+fi
+```
+
+---
+
+### 17. Auto-Provisioning -- Defender Agents (TSC: CC7.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check auto-provisioning settings
+az security auto-provisioning-setting list \
+  --query "[].{Name:name, AutoProvision:autoProvision}" \
+  -o table
+```
+- PASS: autoProvision is `On` for default (Log Analytics agent / Azure Monitor Agent)
+- FAIL: autoProvision is `Off`
+
+**FIX** -- remediate if failing:
+```bash
+# Enable auto-provisioning of monitoring agent
+az security auto-provisioning-setting update \
+  --name default \
+  --auto-provision On
+```
+Gotchas:
+- Auto-provisioning installs the Log Analytics agent (MMA) or Azure Monitor Agent (AMA) on VMs
+- Microsoft is deprecating MMA in favor of AMA -- configure AMA via data collection rules for new deployments
+- Auto-provisioning does not affect existing VMs -- you must install the agent manually or use Azure Policy to remediate
+- For Kubernetes, Defender for Containers auto-provisions its own extensions
+- VM scale sets require additional configuration for auto-provisioning
+
+**VERIFY** -- confirm the fix:
+```bash
+az security auto-provisioning-setting list \
+  --query "[].{Name:name, AutoProvision:autoProvision}" \
+  -o table
+# Expected: autoProvision = On
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az security auto-provisioning-setting list \
+  -o json > "$EVIDENCE_DIR/auto-provisioning-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Storage Account Controls
+
+### 18. Encryption (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check encryption settings for all storage accounts
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, Encryption:encryption.services.blob.enabled, KeySource:encryption.keySource, InfraEncryption:encryption.requireInfrastructureEncryption}" \
+  -o table
+```
+- PASS: all accounts show `Encryption = true`, `KeySource` is either `Microsoft.Storage` (MMK) or `Microsoft.Keyvault` (CMK)
+- FAIL: encryption disabled (extremely unlikely for new accounts -- Azure enforces encryption by default since 2017)
+
+**FIX** -- remediate if failing:
+```bash
+# Storage account encryption is enabled by default and cannot be disabled.
+# To upgrade from Microsoft-managed keys (MMK) to customer-managed keys (CMK):
+
+STORAGE_ACCOUNT="yourstorageaccount"
+KEY_VAULT_NAME="your-keyvault"
+KEY_NAME="storage-encryption-key"
+
+# Step 1: Create a key in Key Vault (see Key Vault section for setup)
+az keyvault key create \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  --kty RSA \
+  --size 2048
+
+# Step 2: Get the key URI
+KEY_URI=$(az keyvault key show \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  --query "key.kid" -o tsv)
+
+# Step 3: Assign managed identity to storage account (for Key Vault access)
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --assign-identity
+
+IDENTITY_PRINCIPAL=$(az storage account show \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "identity.principalId" -o tsv)
+
+# Step 4: Grant Key Vault access to the storage account identity
+az keyvault set-policy \
+  --name "$KEY_VAULT_NAME" \
+  --object-id "$IDENTITY_PRINCIPAL" \
+  --key-permissions get wrapKey unwrapKey
+
+# Step 5: Configure CMK encryption
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --encryption-key-source Microsoft.Keyvault \
+  --encryption-key-vault "https://$KEY_VAULT_NAME.vault.azure.net" \
+  --encryption-key-name "$KEY_NAME"
+```
+Gotchas:
+- Azure enforces storage encryption by default -- you cannot create an unencrypted storage account
+- MMK is sufficient for most SOC 2 audits -- CMK is required only if your security policy mandates customer-managed keys
+- CMK requires Key Vault with soft delete and purge protection enabled
+- If the Key Vault key is deleted or access is revoked, the storage account becomes inaccessible
+- CMK can be configured with automatic key rotation (recommended)
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account show \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{Encryption:encryption.services.blob.enabled, KeySource:encryption.keySource, KeyVault:encryption.keyVaultProperties.keyVaultUri}" \
+  -o table
+# Expected: KeySource = Microsoft.Keyvault (if CMK was configured)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, KeySource:encryption.keySource, InfraEncryption:encryption.requireInfrastructureEncryption}" \
+  -o json > "$EVIDENCE_DIR/storage-encryption-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 19. Public Access Prevention (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check blob public access settings for all storage accounts
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, AllowBlobPublicAccess:allowBlobPublicAccess}" \
+  -o table
+```
+- PASS: all accounts show `AllowBlobPublicAccess = false` (or null, which means public access is disabled by default for accounts created after 2023)
+- FAIL: any account shows `AllowBlobPublicAccess = true`
+
+**FIX** -- remediate if failing:
+```bash
+# Disable blob public access on a specific storage account
+STORAGE_ACCOUNT="yourstorageaccount"
+
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --allow-blob-public-access false
+```
+Gotchas:
+- Disabling blob public access at the account level overrides any container-level public access settings
+- New storage accounts (created after November 2023) have public access disabled by default
+- Before disabling, verify no application relies on anonymous blob access (CDN scenarios, public websites)
+- If you need selective public access (e.g., a specific CDN container), use Azure Front Door or CDN with private origin instead
+- Azure Policy can enforce this setting across all storage accounts: `Microsoft.Storage/storageAccounts/allowBlobPublicAccess` should be `false`
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account show \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{Name:name, AllowBlobPublicAccess:allowBlobPublicAccess}" \
+  -o table
+# Expected: AllowBlobPublicAccess = false
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, AllowBlobPublicAccess:allowBlobPublicAccess}" \
+  -o json > "$EVIDENCE_DIR/storage-public-access-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 20. Soft Delete (TSC: A1.2, CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check blob soft delete for all storage accounts
+for SA in $(az storage account list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az storage account show --name "$SA" --query "resourceGroup" -o tsv)
+  BLOB_DELETE=$(az storage account blob-service-properties show \
+    --account-name "$SA" \
+    --resource-group "$RG" \
+    --query "{BlobSoftDelete:deleteRetentionPolicy.enabled, BlobRetentionDays:deleteRetentionPolicy.days}" \
+    -o json 2>/dev/null)
+  CONTAINER_DELETE=$(az storage account blob-service-properties show \
+    --account-name "$SA" \
+    --resource-group "$RG" \
+    --query "{ContainerSoftDelete:containerDeleteRetentionPolicy.enabled, ContainerRetentionDays:containerDeleteRetentionPolicy.days}" \
+    -o json 2>/dev/null)
+  echo "SA=$SA $BLOB_DELETE $CONTAINER_DELETE"
+done
+```
+- PASS: all accounts have blob soft delete enabled with retention >= 7 days AND container soft delete enabled with retention >= 7 days
+- FAIL: soft delete disabled or retention < 7 days
+
+**FIX** -- remediate if failing:
+```bash
+STORAGE_ACCOUNT="yourstorageaccount"
+
+# Enable blob soft delete (14 days retention)
+az storage account blob-service-properties update \
+  --account-name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --enable-delete-retention true \
+  --delete-retention-days 14
+
+# Enable container soft delete (14 days retention)
+az storage account blob-service-properties update \
+  --account-name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --enable-container-delete-retention true \
+  --container-delete-retention-days 14
+```
+Gotchas:
+- Soft delete protects against accidental deletion -- deleted blobs/containers can be recovered within the retention period
+- Soft-deleted data incurs storage costs during the retention period
+- Soft delete does not protect against storage account deletion -- use resource locks for that
+- Blob versioning (separate feature) provides point-in-time restore capability and is complementary to soft delete
+- Azure Policy can enforce soft delete settings: `Microsoft.Storage/storageAccounts/blobServices/deleteRetentionPolicy.enabled` should be `true`
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account blob-service-properties show \
+  --account-name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{BlobSoftDelete:deleteRetentionPolicy.enabled, BlobRetentionDays:deleteRetentionPolicy.days, ContainerSoftDelete:containerDeleteRetentionPolicy.enabled, ContainerRetentionDays:containerDeleteRetentionPolicy.days}" \
+  -o table
+# Expected: both soft delete enabled with 14 days retention
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SA in $(az storage account list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az storage account show --name "$SA" --query "resourceGroup" -o tsv)
+  az storage account blob-service-properties show \
+    --account-name "$SA" \
+    --resource-group "$RG" \
+    -o json
+done > "$EVIDENCE_DIR/storage-soft-delete-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 21. Infrastructure Encryption (Double Encryption) (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check infrastructure encryption (double encryption) setting
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, InfrastructureEncryption:encryption.requireInfrastructureEncryption}" \
+  -o table
+```
+- PASS: accounts storing highly sensitive data show `InfrastructureEncryption = true`
+- FAIL: infrastructure encryption is null/false on accounts that require it per your security policy
+
+**FIX** -- remediate if failing:
+```bash
+# Infrastructure encryption CANNOT be enabled on an existing storage account.
+# You must create a new account with it enabled and migrate data.
+
+az storage account create \
+  --name "yourstorageaccountnew" \
+  --resource-group "$RESOURCE_GROUP" \
+  --location "$LOCATION" \
+  --sku Standard_LRS \
+  --kind StorageV2 \
+  --require-infrastructure-encryption true \
+  --min-tls-version TLS1_2 \
+  --allow-blob-public-access false
+
+# Then migrate data from old account to new account:
+# az storage copy --source-account-name old --destination-account-name new ...
+```
+Gotchas:
+- Infrastructure encryption (double encryption) is a creation-time-only setting -- it cannot be enabled on an existing account
+- This provides two layers of encryption using two different algorithms (AES-256 at service level + AES-256 at infrastructure level)
+- Not all storage account types support infrastructure encryption
+- This is optional for most SOC 2 audits -- only required if your data classification policy mandates double encryption
+- Enabling infrastructure encryption has no performance impact
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account show \
+  --name "yourstorageaccountnew" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{Name:name, InfrastructureEncryption:encryption.requireInfrastructureEncryption}" \
+  -o table
+# Expected: InfrastructureEncryption = true
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, InfrastructureEncryption:encryption.requireInfrastructureEncryption}" \
+  -o json > "$EVIDENCE_DIR/storage-infra-encryption-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 22. Secure Transfer Required (HTTPS Only) (TSC: CC6.1, CC6.7)
+
+**DISCOVER** -- check current state:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, HTTPSOnly:enableHttpsTrafficOnly, MinTLS:minimumTlsVersion}" \
+  -o table
+```
+- PASS: all accounts show `HTTPSOnly = true` and `MinTLS = TLS1_2`
+- FAIL: any account shows `HTTPSOnly = false` or `MinTLS` below TLS1_2
+
+**FIX** -- remediate if failing:
+```bash
+STORAGE_ACCOUNT="yourstorageaccount"
+
+# Enable HTTPS-only and set minimum TLS version
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --https-only true \
+  --min-tls-version TLS1_2
+```
+Gotchas:
+- HTTPS-only is enabled by default for new storage accounts
+- TLS 1.0 and 1.1 are deprecated -- always enforce TLS 1.2 minimum
+- Applications using older SDKs or tools may break when TLS 1.2 is enforced -- test first
+- NFS Azure Blob Storage does not support HTTPS -- if you use NFS protocol, this setting must remain false for that account (use network isolation instead)
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account show \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{HTTPSOnly:enableHttpsTrafficOnly, MinTLS:minimumTlsVersion}" \
+  -o table
+# Expected: HTTPSOnly = true, MinTLS = TLS1_2
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, HTTPSOnly:enableHttpsTrafficOnly, MinTLS:minimumTlsVersion}" \
+  -o json > "$EVIDENCE_DIR/storage-secure-transfer-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 23. Network Rules (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check network rules for all storage accounts
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DefaultAction:networkRuleSet.defaultAction, VNetRules:length(networkRuleSet.virtualNetworkRules), IPRules:length(networkRuleSet.ipRules), Bypass:networkRuleSet.bypass}" \
+  -o table
+```
+- PASS: `DefaultAction = Deny` on all production storage accounts, with specific VNet rules or IP rules allowing access
+- FAIL: `DefaultAction = Allow` (open to all networks)
+
+**FIX** -- remediate if failing:
+```bash
+STORAGE_ACCOUNT="yourstorageaccount"
+
+# Step 1: Add allowed VNet/subnet before changing default action
+VNET_NAME="your-vnet"
+SUBNET_NAME="your-subnet"
+VNET_RG="your-vnet-rg"
+
+# Enable service endpoint on the subnet first
+az network vnet subnet update \
+  --resource-group "$VNET_RG" \
+  --vnet-name "$VNET_NAME" \
+  --name "$SUBNET_NAME" \
+  --service-endpoints Microsoft.Storage
+
+# Add VNet rule
+az storage account network-rule add \
+  --account-name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --subnet "$SUBNET_NAME"
+
+# Add specific IP (e.g., office IP)
+az storage account network-rule add \
+  --account-name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --ip-address "203.0.113.0/24"
+
+# Step 2: Change default action to deny
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --default-action Deny
+
+# Allow trusted Azure services (required for Azure Backup, Defender, etc.)
+az storage account update \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --bypass AzureServices Logging Metrics
+```
+Gotchas:
+- ALWAYS add your allowed VNet/IP rules BEFORE changing default action to Deny -- otherwise you lock yourself out
+- `--bypass AzureServices` allows trusted Azure first-party services (Backup, Defender, etc.) to access the account
+- Private endpoints provide the strongest network isolation (see control #34)
+- Service endpoints are simpler but do not encrypt traffic at the Azure backbone level
+- Changes to network rules take up to 30 seconds to propagate
+
+**VERIFY** -- confirm the fix:
+```bash
+az storage account show \
+  --name "$STORAGE_ACCOUNT" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{DefaultAction:networkRuleSet.defaultAction, VNetRules:networkRuleSet.virtualNetworkRules[].id, IPRules:networkRuleSet.ipRules[].ipAddressOrRange, Bypass:networkRuleSet.bypass}" \
+  -o json
+# Expected: DefaultAction = Deny, with appropriate VNet/IP rules
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az storage account list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DefaultAction:networkRuleSet.defaultAction, VNetRules:networkRuleSet.virtualNetworkRules, IPRules:networkRuleSet.ipRules, Bypass:networkRuleSet.bypass}" \
+  -o json > "$EVIDENCE_DIR/storage-network-rules-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Azure SQL Controls
+
+### 24. Transparent Data Encryption (TDE) (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# List all SQL servers and their TDE status
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    TDE=$(az sql db tde show \
+      --server "$SERVER" \
+      --database "$DB" \
+      --resource-group "$RG" \
+      --query "state" -o tsv)
+    echo "SERVER=$SERVER DB=$DB TDE=$TDE"
+  done
+done
+```
+- PASS: all databases show `TDE = Enabled`
+- FAIL: any database shows `TDE = Disabled` (extremely unlikely -- TDE is enabled by default since 2017)
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-sql-server"
+SQL_DB="your-database"
+
+# Enable TDE (if somehow disabled)
+az sql db tde set \
+  --server "$SQL_SERVER" \
+  --database "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --status Enabled
+
+# To use customer-managed key (CMK) instead of service-managed key:
+KEY_VAULT_NAME="your-keyvault"
+KEY_NAME="sql-tde-key"
+
+# Create the key in Key Vault
+az keyvault key create \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  --kty RSA \
+  --size 2048
+
+KEY_URI=$(az keyvault key show \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  --query "key.kid" -o tsv)
+
+# Assign managed identity to SQL server
+az sql server update \
+  --name "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --assign-identity
+
+SQL_IDENTITY=$(az sql server show \
+  --name "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "identity.principalId" -o tsv)
+
+# Grant Key Vault access
+az keyvault set-policy \
+  --name "$KEY_VAULT_NAME" \
+  --object-id "$SQL_IDENTITY" \
+  --key-permissions get wrapKey unwrapKey
+
+# Set TDE protector to CMK
+az sql server tde-key set \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --server-key-type AzureKeyVault \
+  --kid "$KEY_URI"
+```
+Gotchas:
+- TDE is enabled by default on Azure SQL Database and cannot be disabled for new databases
+- TDE can be disabled on Azure SQL Managed Instance but this is strongly discouraged
+- CMK TDE requires Key Vault with soft delete and purge protection enabled
+- If the Key Vault key is deleted or access is lost, the database becomes inaccessible (data-loss scenario)
+- tempdb is also encrypted when TDE is enabled
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql db tde show \
+  --server "$SQL_SERVER" \
+  --database "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{State:state}" \
+  -o table
+# Expected: State = Enabled
+
+# Verify TDE protector (CMK if configured)
+az sql server tde-key show \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{Type:serverKeyType, KeyUri:uri}" \
+  -o table
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    az sql db tde show --server "$SERVER" --database "$DB" --resource-group "$RG" -o json
+  done
+done > "$EVIDENCE_DIR/sql-tde-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 25. SQL Auditing (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check auditing settings on all SQL servers
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  AUDIT=$(az sql server audit-policy show \
+    --server "$SERVER" \
+    --resource-group "$RG" \
+    --query "{State:state, StorageEndpoint:storageEndpoint, LogAnalyticsWorkspace:isAzureMonitorTargetEnabled, RetentionDays:retentionDays}" \
+    -o json)
+  echo "SERVER=$SERVER $AUDIT"
+done
+```
+- PASS: audit state is `Enabled`, with a valid storage endpoint or Log Analytics workspace as destination, retention >= 90 days
+- FAIL: audit state is `Disabled` or no destination configured
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-sql-server"
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Option A: Send audit logs to Log Analytics (recommended)
+az sql server audit-policy update \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --state Enabled \
+  --lats Enabled \
+  --lawri "$WORKSPACE_ID"
+
+# Option B: Send audit logs to Storage Account
+STORAGE_ACCOUNT_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/yourstorageaccount"
+
+az sql server audit-policy update \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --state Enabled \
+  --storage-account "$STORAGE_ACCOUNT_ID" \
+  --retention-days 365
+```
+Gotchas:
+- Server-level auditing applies to all databases on the server
+- Database-level auditing can override server-level settings (avoid this complexity -- use server-level only)
+- Log Analytics destination requires the SQL server to have a system-assigned managed identity
+- Audit logs contain: operation type, principal name, timestamp, affected resource, result
+- For high-volume databases, audit logs can be expensive -- use action groups to audit only security-relevant events
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql server audit-policy show \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{State:state, LogAnalytics:isAzureMonitorTargetEnabled, RetentionDays:retentionDays}" \
+  -o table
+# Expected: State = Enabled, LogAnalytics = true or valid storage endpoint
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  az sql server audit-policy show --server "$SERVER" --resource-group "$RG" -o json
+done > "$EVIDENCE_DIR/sql-auditing-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 26. Firewall Rules (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List firewall rules on all SQL servers
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  echo "=== $SERVER ==="
+  az sql server firewall-rule list \
+    --server "$SERVER" \
+    --resource-group "$RG" \
+    --query "[].{Name:name, StartIP:startIpAddress, EndIP:endIpAddress}" \
+    -o table
+
+  # Check for "Allow Azure services" rule (0.0.0.0 - 0.0.0.0)
+  ALLOW_AZURE=$(az sql server firewall-rule list \
+    --server "$SERVER" \
+    --resource-group "$RG" \
+    --query "[?startIpAddress=='0.0.0.0' && endIpAddress=='0.0.0.0'].name" -o tsv)
+  if [ -n "$ALLOW_AZURE" ]; then
+    echo "WARNING: 'Allow Azure services' rule is enabled ($ALLOW_AZURE)"
+  fi
+done
+```
+- PASS: no `0.0.0.0 - 0.0.0.0` rule (Allow Azure services), firewall rules are specific IPs or small CIDR blocks
+- FAIL: `Allow Azure services` rule exists, or overly broad IP ranges (e.g., `0.0.0.0 - 255.255.255.255`)
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-sql-server"
+
+# Remove "Allow Azure services" rule
+az sql server firewall-rule delete \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "AllowAllWindowsAzureIps"
+
+# Remove overly broad rules
+az sql server firewall-rule delete \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "overly-broad-rule-name"
+
+# Add specific IP rules
+az sql server firewall-rule create \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "office-ip" \
+  --start-ip-address "203.0.113.10" \
+  --end-ip-address "203.0.113.10"
+
+# Better: use private endpoints instead of firewall rules (see control #34)
+```
+Gotchas:
+- `AllowAllWindowsAzureIps` (0.0.0.0 - 0.0.0.0) allows ANY Azure service from ANY subscription to connect -- this is overly permissive
+- Instead of "Allow Azure services," use VNet service endpoints or private endpoints
+- The Azure Portal shows "Allow Azure services and resources to access this server" as a toggle -- this creates the 0.0.0.0 rule
+- If your application runs on Azure App Service, use VNet integration + service endpoints instead of the Azure services rule
+- Firewall rules do not apply to connections through private endpoints
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql server firewall-rule list \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name, StartIP:startIpAddress, EndIP:endIpAddress}" \
+  -o table
+# Expected: no 0.0.0.0 rule, only specific IPs
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  az sql server firewall-rule list --server "$SERVER" --resource-group "$RG" -o json
+done > "$EVIDENCE_DIR/sql-firewall-rules-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 27. Advanced Threat Protection (TSC: CC6.1, CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check Advanced Threat Protection (ATP) on all SQL servers
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  ATP=$(az sql server advanced-threat-protection-setting show \
+    --server "$SERVER" \
+    --resource-group "$RG" \
+    --query "state" -o tsv 2>/dev/null)
+  echo "SERVER=$SERVER ATP=$ATP"
+done
+```
+- PASS: all servers show `state = Enabled`
+- FAIL: any server shows `state = Disabled` or `New`
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-sql-server"
+
+# Enable Advanced Threat Protection
+az sql server advanced-threat-protection-setting update \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --state Enabled
+```
+Gotchas:
+- ATP detects: SQL injection, SQL injection vulnerability, anomalous login patterns, data exfiltration, brute force attempts
+- ATP is included with Defender for SQL (part of Defender for Cloud) -- enabling Defender for SQL enables ATP
+- ATP alerts are visible in Defender for Cloud and can be sent to email/Action Groups
+- No performance impact on the database -- ATP analyzes audit logs asynchronously
+- ATP can be configured per-server or per-database (server-level is recommended)
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql server advanced-threat-protection-setting show \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{State:state}" \
+  -o table
+# Expected: State = Enabled
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  az sql server advanced-threat-protection-setting show \
+    --server "$SERVER" --resource-group "$RG" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/sql-atp-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 28. Geo-Replication (TSC: A1.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check geo-replication links for all SQL databases
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    REPLICAS=$(az sql db replica list-links \
+      --server "$SERVER" \
+      --database "$DB" \
+      --resource-group "$RG" \
+      --query "[].{PartnerServer:partnerServer, PartnerDatabase:partnerDatabase, Role:role, ReplicationState:replicationState}" \
+      -o json 2>/dev/null)
+    if [ "$REPLICAS" = "[]" ] || [ -z "$REPLICAS" ]; then
+      echo "NO_REPLICA: SERVER=$SERVER DB=$DB"
+    else
+      echo "REPLICATED: SERVER=$SERVER DB=$DB $REPLICAS"
+    fi
+  done
+done
+
+# Check for failover groups
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  az sql failover-group list \
+    --server "$SERVER" \
+    --resource-group "$RG" \
+    --query "[].{Name:name, PartnerServers:partnerServers[].id, ReadWriteEndpoint:readWriteEndpoint.failoverPolicy}" \
+    -o json 2>/dev/null
+done
+```
+- PASS: production databases have at least one geo-replica or are part of a failover group
+- FAIL: production databases with no geo-replication and no failover group
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-primary-server"
+SQL_DB="your-database"
+PARTNER_SERVER="your-secondary-server"
+PARTNER_RG="your-secondary-rg"
+PARTNER_LOCATION="westus2"
+
+# Option A: Active geo-replication (manual failover)
+# First, create the partner server if it does not exist
+az sql server create \
+  --name "$PARTNER_SERVER" \
+  --resource-group "$PARTNER_RG" \
+  --location "$PARTNER_LOCATION" \
+  --admin-user "sqladmin" \
+  --admin-password "<strong-password>"
+
+# Create the geo-replica
+az sql db replica create \
+  --server "$SQL_SERVER" \
+  --name "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --partner-server "$PARTNER_SERVER" \
+  --partner-resource-group "$PARTNER_RG"
+
+# Option B: Auto-failover group (recommended for production)
+az sql failover-group create \
+  --name "your-failover-group" \
+  --server "$SQL_SERVER" \
+  --resource-group "$RESOURCE_GROUP" \
+  --partner-server "$PARTNER_SERVER" \
+  --partner-resource-group "$PARTNER_RG" \
+  --failover-policy Automatic \
+  --grace-period 1 \
+  --add-db "$SQL_DB"
+```
+Gotchas:
+- Geo-replication is asynchronous -- there is always some replication lag (typically < 5 seconds)
+- Failover groups provide a read-write listener endpoint that automatically redirects after failover
+- The secondary region should be the Azure paired region for optimal performance and disaster recovery SLA
+- Geo-replication doubles your database cost (you pay for the secondary)
+- Dev/staging databases typically do not need geo-replication -- this is for production databases serving customers
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql db replica list-links \
+  --server "$SQL_SERVER" \
+  --database "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{PartnerServer:partnerServer, Role:role, ReplicationState:replicationState}" \
+  -o table
+# Expected: replicationState = CATCH_UP or SEEDING (initially), then CATCH_UP
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    az sql db replica list-links --server "$SERVER" --database "$DB" --resource-group "$RG" -o json 2>/dev/null
+  done
+  az sql failover-group list --server "$SERVER" --resource-group "$RG" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/sql-geo-replication-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 29. Long-Term Backup Retention (TSC: A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check long-term retention (LTR) policies on all databases
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    LTR=$(az sql db ltr-policy show \
+      --server "$SERVER" \
+      --database "$DB" \
+      --resource-group "$RG" \
+      --query "{WeeklyRetention:weeklyRetention, MonthlyRetention:monthlyRetention, YearlyRetention:yearlyRetention, WeekOfYear:weekOfYear}" \
+      -o json 2>/dev/null)
+    echo "SERVER=$SERVER DB=$DB $LTR"
+  done
+done
+
+# Also check short-term backup retention (PITR)
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    PITR=$(az sql db show \
+      --server "$SERVER" \
+      --name "$DB" \
+      --resource-group "$RG" \
+      --query "earliestRestoreDate" -o tsv)
+    echo "SERVER=$SERVER DB=$DB PITR_earliest=$PITR"
+  done
+done
+```
+- PASS: LTR policy configured with at least monthly retention (e.g., `P12M` for 12 months), PITR retention >= 7 days
+- FAIL: all LTR values are `PT0S` (zero -- not configured)
+
+**FIX** -- remediate if failing:
+```bash
+SQL_SERVER="your-sql-server"
+SQL_DB="your-database"
+
+# Set long-term backup retention policy
+az sql db ltr-policy set \
+  --server "$SQL_SERVER" \
+  --database "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --weekly-retention "P4W" \
+  --monthly-retention "P12M" \
+  --yearly-retention "P5Y" \
+  --week-of-year 1
+
+# Set short-term backup retention (PITR) to 14 days (default is 7)
+az sql db str-policy set \
+  --server "$SQL_SERVER" \
+  --name "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --diffbackup-hours 12 \
+  --retention-days 14
+```
+Gotchas:
+- Azure SQL Database has automatic backups (full weekly, differential every 12 hours, transaction log every 5-10 minutes)
+- Short-term retention (PITR) covers 1-35 days and is always enabled
+- Long-term retention (LTR) extends beyond 35 days using weekly, monthly, and yearly policies
+- LTR backups are stored in Azure-managed storage -- cost is based on RA-GRS storage pricing
+- ISO 8601 duration format: P4W = 4 weeks, P12M = 12 months, P5Y = 5 years
+- LTR is not available for Azure SQL Managed Instance Hyperscale tier
+
+**VERIFY** -- confirm the fix:
+```bash
+az sql db ltr-policy show \
+  --server "$SQL_SERVER" \
+  --database "$SQL_DB" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{WeeklyRetention:weeklyRetention, MonthlyRetention:monthlyRetention, YearlyRetention:yearlyRetention}" \
+  -o table
+# Expected: WeeklyRetention=P4W, MonthlyRetention=P12M, YearlyRetention=P5Y
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  for DB in $(az sql db list --server "$SERVER" --resource-group "$RG" --query "[?name != 'master'].name" -o tsv); do
+    az sql db ltr-policy show --server "$SERVER" --database "$DB" --resource-group "$RG" -o json 2>/dev/null
+  done
+done > "$EVIDENCE_DIR/sql-ltr-policy-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Network Security Controls
+
+### 30. NSG Flow Logs (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# List all NSGs and check which have flow logs enabled
+for NSG_ID in $(az network nsg list --subscription "$SUBSCRIPTION_ID" --query "[].id" -o tsv); do
+  NSG_NAME=$(echo "$NSG_ID" | rev | cut -d'/' -f1 | rev)
+  NSG_RG=$(echo "$NSG_ID" | rev | cut -d'/' -f5 | rev)
+
+  FLOW_LOG=$(az network watcher flow-log list \
+    --location "$LOCATION" \
+    --query "[?targetResourceId=='$NSG_ID'].{Name:name, Enabled:enabled, Version:format.version, RetentionDays:retentionPolicy.days, TrafficAnalytics:flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled}" \
+    -o json 2>/dev/null)
+
+  if [ "$FLOW_LOG" = "[]" ] || [ -z "$FLOW_LOG" ]; then
+    echo "NO_FLOW_LOG: $NSG_NAME ($NSG_RG)"
+  else
+    echo "FLOW_LOG: $NSG_NAME $FLOW_LOG"
+  fi
+done
+```
+- PASS: all NSGs have flow logs enabled, version 2, with retention >= 90 days and traffic analytics enabled
+- FAIL: NSGs without flow logs, or flow logs using version 1
+
+**FIX** -- remediate if failing:
+```bash
+NSG_NAME="your-nsg"
+NSG_RG="your-nsg-rg"
+STORAGE_ACCOUNT_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/yourstorageaccount"
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Ensure Network Watcher is enabled in the region
+az network watcher configure \
+  --resource-group "NetworkWatcherRG" \
+  --locations "$LOCATION" \
+  --enabled true
+
+# Create NSG flow log (version 2 with traffic analytics)
+az network watcher flow-log create \
+  --name "flowlog-$NSG_NAME" \
+  --nsg "$NSG_NAME" \
+  --resource-group "$NSG_RG" \
+  --location "$LOCATION" \
+  --storage-account "$STORAGE_ACCOUNT_ID" \
+  --enabled true \
+  --format JSON \
+  --log-version 2 \
+  --retention 90 \
+  --traffic-analytics true \
+  --workspace "$WORKSPACE_ID"
+```
+Gotchas:
+- Network Watcher must be enabled in each region where you have NSGs
+- Flow log version 2 includes additional fields (bytes, packets) -- always use V2
+- Traffic Analytics provides flow visualization in Azure Monitor and requires a Log Analytics workspace
+- Flow logs are stored in the storage account -- cost is based on storage volume
+- Flow logs capture traffic at the NSG level, not at the individual NIC level
+- Processing interval for traffic analytics: 10 minutes (default) or 60 minutes (cheaper)
+
+**VERIFY** -- confirm the fix:
+```bash
+az network watcher flow-log list \
+  --location "$LOCATION" \
+  --query "[].{Name:name, Enabled:enabled, Version:format.version, RetentionDays:retentionPolicy.days, TrafficAnalytics:flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled}" \
+  -o table
+# Expected: all flow logs enabled, version 2, retention >= 90, traffic analytics true
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az network watcher flow-log list \
+  --location "$LOCATION" \
+  -o json > "$EVIDENCE_DIR/nsg-flow-logs-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 31. NSG Rules Audit (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Find overly permissive NSG rules
+for NSG in $(az network nsg list --subscription "$SUBSCRIPTION_ID" --query "[].{Name:name, RG:resourceGroup}" -o json | jq -r '.[] | "\(.Name)|\(.RG)"'); do
+  NSG_NAME=$(echo "$NSG" | cut -d'|' -f1)
+  NSG_RG=$(echo "$NSG" | cut -d'|' -f2)
+
+  # Check for rules allowing Any source on SSH (22), RDP (3389), or all ports
+  az network nsg rule list \
+    --nsg-name "$NSG_NAME" \
+    --resource-group "$NSG_RG" \
+    --query "[?access=='Allow' && direction=='Inbound' && (sourceAddressPrefix=='*' || sourceAddressPrefix=='0.0.0.0/0' || sourceAddressPrefix=='Internet')].{Name:name, Priority:priority, Source:sourceAddressPrefix, DestPort:destinationPortRange, Protocol:protocol}" \
+    -o table
+done
+```
+- PASS: no inbound rules allowing `*` or `0.0.0.0/0` or `Internet` as source, especially on ports 22, 3389, or all ports
+- FAIL: rules allowing unrestricted inbound access on management ports or all ports
+
+**FIX** -- remediate if failing:
+```bash
+NSG_NAME="your-nsg"
+NSG_RG="your-nsg-rg"
+
+# Remove the overly permissive rule
+az network nsg rule delete \
+  --nsg-name "$NSG_NAME" \
+  --resource-group "$NSG_RG" \
+  --name "bad-allow-all-ssh"
+
+# Replace with restrictive rule (specific source IP)
+az network nsg rule create \
+  --nsg-name "$NSG_NAME" \
+  --resource-group "$NSG_RG" \
+  --name "allow-ssh-from-office" \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefixes "203.0.113.0/24" \
+  --destination-port-ranges 22 \
+  --source-port-ranges "*" \
+  --destination-address-prefixes "*"
+
+# For RDP, prefer Azure Bastion instead of direct NSG rules
+# For SSH, prefer Azure Bastion or Just-In-Time (JIT) VM access via Defender
+```
+Gotchas:
+- Azure Bastion provides secure RDP/SSH without exposing management ports on the public internet
+- JIT VM access (Defender for Servers P2) automatically opens NSG rules for a limited time on request
+- Default NSG rules allow all outbound and deny all inbound (except from VNet and load balancer)
+- Priority 65000-65500 are default rules that cannot be modified
+- Application Security Groups (ASGs) simplify NSG rules for multi-tier applications
+
+**VERIFY** -- confirm the fix:
+```bash
+# Re-run the discovery command to confirm no overly permissive rules remain
+az network nsg rule list \
+  --nsg-name "$NSG_NAME" \
+  --resource-group "$NSG_RG" \
+  --query "[?access=='Allow' && direction=='Inbound' && (sourceAddressPrefix=='*' || sourceAddressPrefix=='0.0.0.0/0' || sourceAddressPrefix=='Internet')].{Name:name, DestPort:destinationPortRange}" \
+  -o table
+# Expected: no output (no overly permissive rules)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for NSG in $(az network nsg list --subscription "$SUBSCRIPTION_ID" --query "[].{Name:name, RG:resourceGroup}" -o json | jq -r '.[] | "\(.Name)|\(.RG)"'); do
+  NSG_NAME=$(echo "$NSG" | cut -d'|' -f1)
+  NSG_RG=$(echo "$NSG" | cut -d'|' -f2)
+  echo "=== $NSG_NAME ==="
+  az network nsg rule list --nsg-name "$NSG_NAME" --resource-group "$NSG_RG" -o json
+done > "$EVIDENCE_DIR/nsg-rules-audit-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 32. Azure Firewall or NVA (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check for Azure Firewall instances
+az network firewall list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, ProvisioningState:provisioningState, ThreatIntelMode:threatIntelMode, SKU:sku.tier}" \
+  -o table
+
+# Check for Azure Firewall policies
+az network firewall policy list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, ThreatIntelMode:threatIntelMode, DNSProxy:dnsSettings.enableProxy}" \
+  -o table
+
+# Check for route tables directing traffic through the firewall
+az network route-table list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, Routes:routes[].{Prefix:addressPrefix, NextHop:nextHopType, NextHopIP:nextHopIpAddress}}" \
+  -o json
+```
+- PASS: Azure Firewall or NVA exists, traffic from production subnets routes through it, threat intelligence is enabled
+- FAIL: no centralized firewall, production traffic goes directly to the internet
+
+**FIX** -- remediate if failing:
+```bash
+# Note: Azure Firewall is a significant infrastructure component.
+# This is a simplified setup -- production deployment should use Terraform (see module below).
+
+FIREWALL_NAME="soc2-firewall"
+VNET_NAME="your-hub-vnet"
+FIREWALL_SUBNET="AzureFirewallSubnet"  # Must be named exactly this
+
+# Create the firewall subnet (if it does not exist)
+az network vnet subnet create \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --name "$FIREWALL_SUBNET" \
+  --address-prefixes "10.0.1.0/26"
+
+# Create public IP for the firewall
+az network public-ip create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "${FIREWALL_NAME}-pip" \
+  --sku Standard \
+  --allocation-method Static
+
+# Create the firewall (Standard tier includes threat intelligence)
+az network firewall create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$FIREWALL_NAME" \
+  --location "$LOCATION" \
+  --vnet-name "$VNET_NAME" \
+  --tier Standard \
+  --threat-intel-mode Alert
+
+# Get the firewall private IP
+FIREWALL_IP=$(az network firewall show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$FIREWALL_NAME" \
+  --query "ipConfigurations[0].privateIPAddress" -o tsv)
+
+# Create route table to send traffic through the firewall
+az network route-table create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-udr-through-firewall"
+
+az network route-table route create \
+  --resource-group "$RESOURCE_GROUP" \
+  --route-table-name "soc2-udr-through-firewall" \
+  --name "default-through-firewall" \
+  --address-prefix "0.0.0.0/0" \
+  --next-hop-type VirtualAppliance \
+  --next-hop-ip-address "$FIREWALL_IP"
+
+# Associate route table with production subnet
+az network vnet subnet update \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --name "production-subnet" \
+  --route-table "soc2-udr-through-firewall"
+```
+Gotchas:
+- Azure Firewall costs approximately $1.25/hour (Standard tier) -- it is not free
+- The firewall subnet MUST be named "AzureFirewallSubnet" and have at least a /26 prefix
+- Azure Firewall Premium adds TLS inspection, IDPS, and URL filtering -- consider for high-security environments
+- For cost-sensitive environments, consider Azure Firewall Basic tier or third-party NVA
+- Hub-and-spoke topology is the recommended architecture for centralized firewall
+
+**VERIFY** -- confirm the fix:
+```bash
+az network firewall show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$FIREWALL_NAME" \
+  --query "{Name:name, ProvisioningState:provisioningState, ThreatIntelMode:threatIntelMode}" \
+  -o table
+# Expected: ProvisioningState = Succeeded, ThreatIntelMode = Alert or Deny
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az network firewall list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/azure-firewall-$(date +%Y%m%d-%H%M%S).json"
+
+az network route-table list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/route-tables-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 33. DDoS Protection (TSC: A1.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check if DDoS Protection Plan exists
+az network ddos-protection list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, ProvisioningState:provisioningState}" \
+  -o table
+
+# Check which VNets have DDoS Protection enabled
+az network vnet list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DDoSProtection:enableDdosProtection, DDoSPlan:ddosProtectionPlan.id}" \
+  -o table
+```
+- PASS: DDoS Protection plan exists and is associated with production VNets (`enableDdosProtection = true`)
+- FAIL: no DDoS Protection plan, or production VNets not protected
+
+**FIX** -- remediate if failing:
+```bash
+# Create DDoS Protection Plan
+az network ddos-protection create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-ddos-plan" \
+  --location "$LOCATION"
+
+DDOS_PLAN_ID=$(az network ddos-protection show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-ddos-plan" \
+  --query "id" -o tsv)
+
+# Associate with production VNet
+az network vnet update \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "your-production-vnet" \
+  --ddos-protection true \
+  --ddos-protection-plan "$DDOS_PLAN_ID"
+```
+Gotchas:
+- DDoS Protection Standard costs approximately $2,944/month per plan (covers up to 100 public IPs)
+- One plan can protect multiple VNets across multiple subscriptions
+- Azure provides DDoS Infrastructure Protection (Basic) for free on all public endpoints -- Standard adds telemetry, alerting, cost protection, and faster mitigation
+- For cost-sensitive environments, consider using DDoS IP Protection (per-IP pricing) instead of the full plan
+- DDoS Protection Standard includes a cost protection SLA -- if you are DDoSed, Azure credits the scale-out costs
+
+**VERIFY** -- confirm the fix:
+```bash
+az network vnet show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "your-production-vnet" \
+  --query "{Name:name, DDoSProtection:enableDdosProtection, DDoSPlan:ddosProtectionPlan.id}" \
+  -o table
+# Expected: DDoSProtection = true, DDoSPlan = <plan-id>
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az network ddos-protection list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/ddos-protection-$(date +%Y%m%d-%H%M%S).json"
+
+az network vnet list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DDoSProtection:enableDdosProtection, DDoSPlan:ddosProtectionPlan.id}" \
+  -o json > "$EVIDENCE_DIR/vnet-ddos-status-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 34. Private Endpoints (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List all private endpoints
+az network private-endpoint list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, Subnet:subnet.id, TargetResource:privateLinkServiceConnections[0].privateLinkServiceId, GroupId:privateLinkServiceConnections[0].groupIds[0]}" \
+  -o table
+
+# Check which PaaS services do NOT have private endpoints
+# Storage accounts without private endpoints:
+az storage account list --subscription "$SUBSCRIPTION_ID" \
+  --query "[?networkRuleSet.defaultAction=='Allow'].{Name:name, DefaultAction:networkRuleSet.defaultAction}" \
+  -o table
+
+# SQL servers without private endpoints:
+for SERVER in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  RG=$(az sql server show --name "$SERVER" --query "resourceGroup" -o tsv)
+  PE_COUNT=$(az network private-endpoint-connection list \
+    --id "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG/providers/Microsoft.Sql/servers/$SERVER" \
+    --query "length(@)" -o tsv 2>/dev/null)
+  if [ "${PE_COUNT:-0}" = "0" ]; then
+    echo "NO_PRIVATE_ENDPOINT: SQL Server $SERVER"
+  fi
+done
+```
+- PASS: all production PaaS services (Storage, SQL, Key Vault) have private endpoints configured
+- FAIL: PaaS services accessible only via public endpoints
+
+**FIX** -- remediate if failing:
+```bash
+VNET_NAME="your-vnet"
+SUBNET_NAME="private-endpoints-subnet"
+
+# Create a dedicated subnet for private endpoints (if it does not exist)
+az network vnet subnet create \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --name "$SUBNET_NAME" \
+  --address-prefixes "10.0.10.0/24" \
+  --disable-private-endpoint-network-policies true
+
+# Private endpoint for Storage Account
+STORAGE_ACCOUNT_ID=$(az storage account show \
+  --name "yourstorageaccount" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "id" -o tsv)
+
+az network private-endpoint create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "pe-storage" \
+  --vnet-name "$VNET_NAME" \
+  --subnet "$SUBNET_NAME" \
+  --private-connection-resource-id "$STORAGE_ACCOUNT_ID" \
+  --group-id blob \
+  --connection-name "pe-storage-connection"
+
+# Private endpoint for SQL Server
+SQL_SERVER_ID=$(az sql server show \
+  --name "your-sql-server" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "id" -o tsv)
+
+az network private-endpoint create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "pe-sql" \
+  --vnet-name "$VNET_NAME" \
+  --subnet "$SUBNET_NAME" \
+  --private-connection-resource-id "$SQL_SERVER_ID" \
+  --group-id sqlServer \
+  --connection-name "pe-sql-connection"
+
+# Private endpoint for Key Vault
+KV_ID=$(az keyvault show \
+  --name "your-keyvault" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "id" -o tsv)
+
+az network private-endpoint create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "pe-keyvault" \
+  --vnet-name "$VNET_NAME" \
+  --subnet "$SUBNET_NAME" \
+  --private-connection-resource-id "$KV_ID" \
+  --group-id vault \
+  --connection-name "pe-kv-connection"
+
+# Configure Private DNS zones for name resolution
+az network private-dns zone create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "privatelink.blob.core.windows.net"
+
+az network private-dns link vnet create \
+  --resource-group "$RESOURCE_GROUP" \
+  --zone-name "privatelink.blob.core.windows.net" \
+  --name "blob-dns-link" \
+  --virtual-network "$VNET_NAME" \
+  --registration-enabled false
+
+# Create DNS zone group for automatic DNS record management
+az network private-endpoint dns-zone-group create \
+  --resource-group "$RESOURCE_GROUP" \
+  --endpoint-name "pe-storage" \
+  --name "default" \
+  --private-dns-zone "privatelink.blob.core.windows.net" \
+  --zone-name "blob"
+```
+Gotchas:
+- Private endpoints require Private DNS zones for name resolution -- without DNS, connections will still go to the public endpoint
+- Each PaaS service type has a different group ID: blob, file, queue, table (Storage); sqlServer (SQL); vault (Key Vault)
+- Private endpoints cost approximately $0.01/hour per endpoint + data processing charges
+- After creating private endpoints, disable public access on the PaaS service for full isolation
+- Private endpoint subnet must have `privateEndpointNetworkPolicies` disabled (the `--disable-private-endpoint-network-policies` flag)
+
+**VERIFY** -- confirm the fix:
+```bash
+az network private-endpoint list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, TargetResource:privateLinkServiceConnections[0].privateLinkServiceId, Status:privateLinkServiceConnections[0].privateLinkServiceConnectionState.status}" \
+  -o table
+# Expected: all private endpoints show Status = Approved
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az network private-endpoint list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/private-endpoints-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 35. Service Endpoints (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# List service endpoints configured on all subnets
+az network vnet list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{VNet:name, Subnets:subnets[].{Subnet:name, ServiceEndpoints:serviceEndpoints[].service}}" \
+  -o json
+```
+- PASS: production subnets have service endpoints for the Azure services they access (Microsoft.Storage, Microsoft.Sql, Microsoft.KeyVault)
+- FAIL: no service endpoints configured on subnets that access PaaS services (and private endpoints are also not in use)
+
+**FIX** -- remediate if failing:
+```bash
+VNET_NAME="your-vnet"
+SUBNET_NAME="your-production-subnet"
+
+# Add service endpoints for Storage, SQL, and Key Vault
+az network vnet subnet update \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --name "$SUBNET_NAME" \
+  --service-endpoints Microsoft.Storage Microsoft.Sql Microsoft.KeyVault
+```
+Gotchas:
+- Service endpoints are free -- no additional cost
+- Service endpoints keep traffic on the Azure backbone network but do not provide full network isolation (the PaaS public endpoint still exists)
+- For full isolation, use private endpoints (control #34) -- service endpoints are the minimum acceptable configuration
+- Adding or removing service endpoints causes a brief subnet connectivity disruption (seconds) -- plan maintenance window
+- Service endpoints must be enabled on both the subnet AND the target resource (e.g., storage account network rules)
+
+**VERIFY** -- confirm the fix:
+```bash
+az network vnet subnet show \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "$VNET_NAME" \
+  --name "$SUBNET_NAME" \
+  --query "serviceEndpoints[].service" \
+  -o table
+# Expected: Microsoft.Storage, Microsoft.Sql, Microsoft.KeyVault
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az network vnet list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{VNet:name, Subnets:subnets[].{Subnet:name, ServiceEndpoints:serviceEndpoints[].service}}" \
+  -o json > "$EVIDENCE_DIR/service-endpoints-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Key Vault Controls
+
+### 36. Soft Delete and Purge Protection (TSC: CC6.1, A1.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check soft delete and purge protection on all Key Vaults
+az keyvault list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, SoftDelete:properties.enableSoftDelete, PurgeProtection:properties.enablePurgeProtection, RetentionDays:properties.softDeleteRetentionInDays}" \
+  -o table
+```
+- PASS: all Key Vaults show `SoftDelete = true` and `PurgeProtection = true` with retention >= 7 days (90 days recommended)
+- FAIL: any Key Vault with purge protection disabled
+
+**FIX** -- remediate if failing:
+```bash
+KEY_VAULT_NAME="your-keyvault"
+
+# Enable purge protection (soft delete is now always enabled by default)
+az keyvault update \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --enable-purge-protection true
+```
+Gotchas:
+- Soft delete is enabled by default for all new Key Vaults and CANNOT be disabled (enforced since February 2025)
+- Purge protection prevents permanent deletion during the retention period -- once enabled, it CANNOT be disabled
+- Default soft delete retention is 90 days (configurable: 7-90 days at creation time only)
+- This is a one-way operation: enabling purge protection is irreversible
+- If a key/secret/certificate is deleted, it moves to a "soft-deleted" state and can be recovered within the retention period
+
+**VERIFY** -- confirm the fix:
+```bash
+az keyvault show \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{SoftDelete:properties.enableSoftDelete, PurgeProtection:properties.enablePurgeProtection, RetentionDays:properties.softDeleteRetentionInDays}" \
+  -o table
+# Expected: SoftDelete = true, PurgeProtection = true, RetentionDays >= 7
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az keyvault list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, SoftDelete:properties.enableSoftDelete, PurgeProtection:properties.enablePurgeProtection, RetentionDays:properties.softDeleteRetentionInDays}" \
+  -o json > "$EVIDENCE_DIR/keyvault-soft-delete-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 37. Access Policies or RBAC (TSC: CC6.1, CC6.3)
+
+**DISCOVER** -- check current state:
+```bash
+# Check access model (vault access policy vs RBAC)
+az keyvault list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, AccessModel:properties.enableRbacAuthorization}" \
+  -o table
+
+# For vaults using access policies, list who has access
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[?properties.enableRbacAuthorization!=true || properties.enableRbacAuthorization==null].name" -o tsv); do
+  echo "=== $KV (Access Policies) ==="
+  az keyvault show --name "$KV" \
+    --query "properties.accessPolicies[].{ObjectId:objectId, KeyPerms:permissions.keys, SecretPerms:permissions.secrets, CertPerms:permissions.certificates}" \
+    -o table
+done
+
+# For vaults using RBAC, list role assignments
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[?properties.enableRbacAuthorization==true].{Name:name, Id:id}" -o json | jq -r '.[] | "\(.Name)|\(.Id)"'); do
+  KV_NAME=$(echo "$KV" | cut -d'|' -f1)
+  KV_ID=$(echo "$KV" | cut -d'|' -f2)
+  echo "=== $KV_NAME (RBAC) ==="
+  az role assignment list --scope "$KV_ID" \
+    --query "[].{Principal:principalName, Role:roleDefinitionName}" \
+    -o table
+done
+```
+- PASS: RBAC is enabled (preferred), role assignments follow least privilege, no overly broad access
+- FAIL: access policies grant excessive permissions (e.g., all key/secret/certificate permissions to non-admin users)
+
+**FIX** -- remediate if failing:
+```bash
+KEY_VAULT_NAME="your-keyvault"
+
+# Option A (recommended): Convert to RBAC model
+az keyvault update \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --enable-rbac-authorization true
+
+# Grant specific RBAC roles (least privilege)
+# Key Vault Secrets User (read secrets only):
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee "<user-or-sp-object-id>" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.KeyVault/vaults/$KEY_VAULT_NAME"
+
+# Key Vault Administrator (full access -- for admin only):
+az role assignment create \
+  --role "Key Vault Administrator" \
+  --assignee "<admin-object-id>" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.KeyVault/vaults/$KEY_VAULT_NAME"
+
+# Option B: If staying on access policies, restrict permissions
+az keyvault set-policy \
+  --name "$KEY_VAULT_NAME" \
+  --object-id "<user-object-id>" \
+  --secret-permissions get list \
+  --key-permissions get list \
+  --certificate-permissions get list
+```
+Gotchas:
+- RBAC is the recommended access model -- it integrates with Entra ID Conditional Access and PIM
+- Converting from access policies to RBAC: existing access policies are preserved but no longer evaluated -- you must create equivalent RBAC role assignments first
+- Built-in Key Vault RBAC roles: Key Vault Administrator, Key Vault Secrets Officer, Key Vault Secrets User, Key Vault Crypto Officer, Key Vault Crypto User, Key Vault Certificates Officer, Key Vault Reader
+- Access policies support up to 1024 policies per vault
+
+**VERIFY** -- confirm the fix:
+```bash
+az keyvault show \
+  --name "$KEY_VAULT_NAME" \
+  --query "{AccessModel:properties.enableRbacAuthorization}" \
+  -o table
+# Expected: AccessModel = true (RBAC enabled)
+
+az role assignment list \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.KeyVault/vaults/$KEY_VAULT_NAME" \
+  --query "[].{Principal:principalName, Role:roleDefinitionName}" \
+  -o table
+# Expected: only necessary roles assigned
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  KV_ID=$(az keyvault show --name "$KV" --query "id" -o tsv)
+  echo "=== $KV ==="
+  az keyvault show --name "$KV" --query "properties.{AccessModel:enableRbacAuthorization, AccessPolicies:accessPolicies}" -o json
+  az role assignment list --scope "$KV_ID" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/keyvault-access-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 38. Key Rotation (TSC: CC6.1)
+
+**DISCOVER** -- check current state:
+```bash
+# Check key rotation policies on all Key Vault keys
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  for KEY in $(az keyvault key list --vault-name "$KV" --query "[].name" -o tsv 2>/dev/null); do
+    ROTATION=$(az keyvault key rotation-policy show \
+      --vault-name "$KV" \
+      --name "$KEY" \
+      --query "{AutoRotate:lifetimeActions[?action.type=='Rotate'].trigger, Notify:lifetimeActions[?action.type=='Notify'].trigger}" \
+      -o json 2>/dev/null)
+    echo "KV=$KV KEY=$KEY $ROTATION"
+  done
+done
+```
+- PASS: keys have rotation policies configured with automatic rotation
+- FAIL: no rotation policies, or keys that have not been rotated in > 365 days
+
+**FIX** -- remediate if failing:
+```bash
+KEY_VAULT_NAME="your-keyvault"
+KEY_NAME="your-key"
+
+# Set automatic key rotation policy (rotate every 90 days, notify 30 days before expiry)
+az keyvault key rotation-policy update \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  --value '{
+    "lifetimeActions": [
+      {
+        "trigger": {"timeAfterCreate": "P90D"},
+        "action": {"type": "Rotate"}
+      },
+      {
+        "trigger": {"timeBeforeExpiry": "P30D"},
+        "action": {"type": "Notify"}
+      }
+    ],
+    "attributes": {
+      "expiryTime": "P1Y"
+    }
+  }'
+
+# Manually rotate a key immediately
+az keyvault key rotate \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME"
+```
+Gotchas:
+- Automatic key rotation creates a new version of the key -- applications using the key without version pinning will automatically use the new version
+- Applications that pin to a specific key version will NOT automatically use the rotated key -- they must be updated
+- Key rotation policies use ISO 8601 duration: P90D = 90 days, P1Y = 1 year
+- Notification actions send events to Event Grid -- you must configure an Event Grid subscription to receive them
+- For keys used as TDE protectors or CMK for storage, Azure services handle version rotation automatically
+
+**VERIFY** -- confirm the fix:
+```bash
+az keyvault key rotation-policy show \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$KEY_NAME" \
+  -o json
+# Expected: lifetimeActions contains a Rotate trigger
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].name" -o tsv); do
+  for KEY in $(az keyvault key list --vault-name "$KV" --query "[].name" -o tsv 2>/dev/null); do
+    echo "KV=$KV KEY=$KEY"
+    az keyvault key rotation-policy show --vault-name "$KV" --name "$KEY" -o json 2>/dev/null
+  done
+done > "$EVIDENCE_DIR/keyvault-key-rotation-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 39. Diagnostic Logging (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check diagnostic settings on all Key Vaults
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].{Name:name, Id:id}" -o json | jq -r '.[] | "\(.Name)|\(.Id)"'); do
+  KV_NAME=$(echo "$KV" | cut -d'|' -f1)
+  KV_ID=$(echo "$KV" | cut -d'|' -f2)
+  DIAG=$(az monitor diagnostic-settings list \
+    --resource "$KV_ID" \
+    --query "[].{Name:name, WorkspaceId:workspaceId, Logs:logs[?enabled==true].category}" \
+    -o json 2>/dev/null)
+  echo "KV=$KV_NAME $DIAG"
+done
+```
+- PASS: all Key Vaults have diagnostic settings sending AuditEvent logs to Log Analytics
+- FAIL: no diagnostic settings, or AuditEvent category not enabled
+
+**FIX** -- remediate if failing:
+```bash
+KEY_VAULT_NAME="your-keyvault"
+KV_ID=$(az keyvault show --name "$KEY_VAULT_NAME" --query "id" -o tsv)
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+az monitor diagnostic-settings create \
+  --name "soc2-kv-diagnostics" \
+  --resource "$KV_ID" \
+  --workspace "$WORKSPACE_ID" \
+  --logs '[
+    {"category": "AuditEvent", "enabled": true, "retentionPolicy": {"enabled": false, "days": 0}},
+    {"category": "AzurePolicyEvaluationDetails", "enabled": true, "retentionPolicy": {"enabled": false, "days": 0}}
+  ]' \
+  --metrics '[
+    {"category": "AllMetrics", "enabled": true, "retentionPolicy": {"enabled": false, "days": 0}}
+  ]'
+```
+Gotchas:
+- AuditEvent logs capture every key/secret/certificate operation (get, list, set, delete, etc.)
+- Retention is controlled at the Log Analytics workspace level, not at the diagnostic setting level (retention policy in diagnostic settings is deprecated)
+- High-volume Key Vault operations can generate significant log volume -- monitor ingestion costs
+- You can send to multiple destinations (Log Analytics + Storage Account) for redundancy
+
+**VERIFY** -- confirm the fix:
+```bash
+KV_ID=$(az keyvault show --name "$KEY_VAULT_NAME" --query "id" -o tsv)
+az monitor diagnostic-settings list \
+  --resource "$KV_ID" \
+  --query "[].{Name:name, Logs:logs[?enabled==true].category}" \
+  -o table
+# Expected: AuditEvent category enabled
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+for KV in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].id" -o tsv); do
+  az monitor diagnostic-settings list --resource "$KV" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/keyvault-diagnostics-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 40. Network Restrictions (TSC: CC6.1, CC6.6)
+
+**DISCOVER** -- check current state:
+```bash
+# Check network restrictions on all Key Vaults
+az keyvault list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DefaultAction:properties.networkAcls.defaultAction, Bypass:properties.networkAcls.bypass, IPRules:properties.networkAcls.ipRules, VNetRules:properties.networkAcls.virtualNetworkRules}" \
+  -o json
+```
+- PASS: `DefaultAction = Deny` with specific IP or VNet rules, or private endpoint configured
+- FAIL: `DefaultAction = Allow` (open to all networks)
+
+**FIX** -- remediate if failing:
+```bash
+KEY_VAULT_NAME="your-keyvault"
+
+# Add network rules before changing default action
+az keyvault network-rule add \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --ip-address "203.0.113.0/24"
+
+az keyvault network-rule add \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --vnet-name "your-vnet" \
+  --subnet "your-subnet"
+
+# Change default action to deny
+az keyvault update \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --default-action Deny \
+  --bypass AzureServices
+```
+Gotchas:
+- ALWAYS add your allowed IPs and VNet rules BEFORE changing default action to Deny
+- `--bypass AzureServices` allows trusted Azure first-party services to access the vault (required for Azure Backup, Disk Encryption, etc.)
+- Private endpoints provide the strongest isolation (see control #34)
+- Network rules do not apply to operations performed by the vault owner (who has management plane access)
+- If you lock yourself out, you can still manage network rules via the management plane (Azure Portal, CLI)
+
+**VERIFY** -- confirm the fix:
+```bash
+az keyvault show \
+  --name "$KEY_VAULT_NAME" \
+  --query "{DefaultAction:properties.networkAcls.defaultAction, Bypass:properties.networkAcls.bypass}" \
+  -o table
+# Expected: DefaultAction = Deny, Bypass = AzureServices
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az keyvault list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, DefaultAction:properties.networkAcls.defaultAction, Bypass:properties.networkAcls.bypass, IPRules:length(properties.networkAcls.ipRules), VNetRules:length(properties.networkAcls.virtualNetworkRules)}" \
+  -o json > "$EVIDENCE_DIR/keyvault-network-rules-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Azure Monitor / Log Analytics Controls
+
+### 41. Workspace Configuration (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Detailed workspace configuration
+az monitor log-analytics workspace list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, SKU:sku.name, RetentionDays:retentionInDays, DailyCapGB:workspaceCapping.dailyQuotaGb, ProvisioningState:provisioningState}" \
+  -o table
+
+# Check workspace data export rules
+for WS in $(az monitor log-analytics workspace list --subscription "$SUBSCRIPTION_ID" --query "[].{Name:name, RG:resourceGroup}" -o json | jq -r '.[] | "\(.Name)|\(.RG)"'); do
+  WS_NAME=$(echo "$WS" | cut -d'|' -f1)
+  WS_RG=$(echo "$WS" | cut -d'|' -f2)
+  echo "=== $WS_NAME ==="
+  az monitor log-analytics workspace data-export list \
+    --resource-group "$WS_RG" \
+    --workspace-name "$WS_NAME" \
+    -o table 2>/dev/null
+done
+```
+- PASS: SKU is PerGB2018, retention >= 365 days, provisioning state is Succeeded
+- FAIL: legacy SKU (Free, Standalone), retention < 365 days, or no workspace at all
+
+**FIX** -- remediate if failing:
+```bash
+# Update workspace SKU and retention (if workspace exists)
+az monitor log-analytics workspace update \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --retention-time 365 \
+  --sku PerGB2018
+
+# Set a daily cap to control costs (optional but recommended)
+az monitor log-analytics workspace update \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --quota 5
+
+# Configure data export for long-term archival (to Storage Account)
+az monitor log-analytics workspace data-export create \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --name "archive-to-storage" \
+  --destination "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/yourstorageaccount" \
+  --tables SecurityEvent Heartbeat AzureActivity
+```
+Gotchas:
+- PerGB2018 is the current recommended SKU -- legacy SKUs (PerNode, Standalone) are not recommended for new workspaces
+- Daily cap stops data ingestion when reached -- set it high enough to avoid missing critical security events
+- Data export is continuous and near-real-time -- use it for long-term archival beyond the workspace retention period
+- Archive tier (up to 12 years) provides cost-effective long-term retention within the workspace itself
+- Table-level retention allows different retention periods for different data types
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor log-analytics workspace show \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "soc2-law" \
+  --query "{SKU:sku.name, RetentionDays:retentionInDays, DailyCap:workspaceCapping.dailyQuotaGb}" \
+  -o table
+# Expected: SKU=PerGB2018, RetentionDays=365
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor log-analytics workspace list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/workspace-config-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 42. Diagnostic Settings on All Resources (TSC: CC7.1, CC7.2)
+
+**DISCOVER** -- check current state:
+```bash
+# Check which resources have diagnostic settings configured
+# This queries all resources in the subscription and checks for diagnostic settings
+az resource list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[?type!='Microsoft.Network/networkSecurityGroups/securityRules' && type!='Microsoft.Network/virtualNetworks/subnets'].{Name:name, Type:type, Id:id}" \
+  -o json | jq -r '.[] | "\(.Name)|\(.Type)|\(.Id)"' | while read RESOURCE; do
+    NAME=$(echo "$RESOURCE" | cut -d'|' -f1)
+    TYPE=$(echo "$RESOURCE" | cut -d'|' -f2)
+    ID=$(echo "$RESOURCE" | cut -d'|' -f3)
+    DIAG_COUNT=$(az monitor diagnostic-settings list \
+      --resource "$ID" \
+      --query "length(@)" -o tsv 2>/dev/null)
+    if [ "${DIAG_COUNT:-0}" = "0" ]; then
+      echo "NO_DIAGNOSTICS: $NAME ($TYPE)"
+    fi
+done
+```
+- PASS: all critical resources (Key Vaults, SQL Servers, Storage Accounts, NSGs, VNets, App Services) have diagnostic settings
+- FAIL: critical resources without diagnostic settings
+
+**FIX** -- remediate if failing:
+```bash
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Use Azure Policy to enforce diagnostic settings across all resources
+# Deploy the built-in policy initiative "Enable Azure Monitor for VMs" or create custom policies
+
+# Example: Enable diagnostics on a specific resource
+RESOURCE_ID="<resource-id>"
+
+az monitor diagnostic-settings create \
+  --name "soc2-diagnostics" \
+  --resource "$RESOURCE_ID" \
+  --workspace "$WORKSPACE_ID" \
+  --logs '[{"categoryGroup": "allLogs", "enabled": true}]' \
+  --metrics '[{"category": "AllMetrics", "enabled": true}]'
+
+# For bulk deployment, use Azure Policy with DeployIfNotExists effect:
+# Built-in policy: "Deploy Diagnostic Settings for Key Vault to Log Analytics workspace"
+# Built-in policy: "Deploy Diagnostic Settings for Azure SQL Database to Log Analytics workspace"
+# Assign these policies at the subscription level:
+az policy assignment create \
+  --name "diag-keyvault-to-law" \
+  --policy "/providers/Microsoft.Authorization/policyDefinitions/bef3f64c-5290-43b7-85b0-9b254eef4c47" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID" \
+  --params '{"logAnalytics": {"value": "'"$WORKSPACE_ID"'"}}'
+```
+Gotchas:
+- Not all resource types support diagnostic settings -- check the resource provider documentation
+- `categoryGroup: allLogs` enables all log categories -- this is simpler than specifying each category individually
+- Azure Policy with DeployIfNotExists effect can automatically create diagnostic settings on new resources
+- Policy remediation can backfill diagnostic settings on existing resources: `az policy remediation create ...`
+- Some log categories generate very high volume -- monitor ingestion costs after enabling
+
+**VERIFY** -- confirm the fix:
+```bash
+# Re-run the discovery script and confirm fewer (ideally zero) resources without diagnostics
+az monitor diagnostic-settings list \
+  --resource "$RESOURCE_ID" \
+  --query "[].{Name:name, Workspace:workspaceId}" \
+  -o table
+# Expected: at least one diagnostic setting per critical resource
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+# Capture diagnostic settings for all critical resource types
+for KV_ID in $(az keyvault list --subscription "$SUBSCRIPTION_ID" --query "[].id" -o tsv); do
+  az monitor diagnostic-settings list --resource "$KV_ID" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/diagnostics-keyvaults-$(date +%Y%m%d-%H%M%S).json"
+
+for SQL_ID in $(az sql server list --subscription "$SUBSCRIPTION_ID" --query "[].id" -o tsv); do
+  az monitor diagnostic-settings list --resource "$SQL_ID" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/diagnostics-sql-$(date +%Y%m%d-%H%M%S).json"
+
+for SA_ID in $(az storage account list --subscription "$SUBSCRIPTION_ID" --query "[].id" -o tsv); do
+  az monitor diagnostic-settings list --resource "$SA_ID" -o json 2>/dev/null
+done > "$EVIDENCE_DIR/diagnostics-storage-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 43. Alert Rules for Security Events (TSC: CC7.2, CC7.3)
+
+**DISCOVER** -- check current state:
+```bash
+# List all scheduled query alert rules (log-based alerts)
+az monitor scheduled-query list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, RG:resourceGroup, Enabled:enabled, Severity:severity}" \
+  -o table
+```
+- PASS: alert rules exist for role changes, resource deletions, policy changes, and other security events
+- FAIL: no scheduled query alert rules for security events
+
+**FIX** -- remediate if failing:
+```bash
+ACTION_GROUP_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Insights/actionGroups/soc2-security-alerts"
+WORKSPACE_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/soc2-law"
+
+# Alert: Role assignment changes
+az monitor scheduled-query create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-role-assignment-changes" \
+  --description "Alert on Azure role assignment changes" \
+  --scopes "$WORKSPACE_ID" \
+  --condition "count 'AzureActivity | where OperationNameValue =~ \"Microsoft.Authorization/roleAssignments/write\" | where ActivityStatusValue =~ \"Success\"' > 0" \
+  --condition-query 'AzureActivity | where OperationNameValue =~ "Microsoft.Authorization/roleAssignments/write" | where ActivityStatusValue =~ "Success"' \
+  --window-size 5m \
+  --evaluation-frequency 5m \
+  --severity 2 \
+  --action-groups "$ACTION_GROUP_ID"
+
+# Alert: Resource deletions
+az monitor scheduled-query create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-resource-deletions" \
+  --description "Alert on resource deletions" \
+  --scopes "$WORKSPACE_ID" \
+  --condition "count 'AzureActivity | where OperationNameValue endswith \"/delete\" | where ActivityStatusValue =~ \"Success\"' > 0" \
+  --condition-query 'AzureActivity | where OperationNameValue endswith "/delete" | where ActivityStatusValue =~ "Success"' \
+  --window-size 5m \
+  --evaluation-frequency 5m \
+  --severity 2 \
+  --action-groups "$ACTION_GROUP_ID"
+
+# Alert: Key Vault access anomalies
+az monitor scheduled-query create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "soc2-keyvault-access" \
+  --description "Alert on Key Vault secret access outside business hours" \
+  --scopes "$WORKSPACE_ID" \
+  --condition "count 'AzureDiagnostics | where ResourceType == \"VAULTS\" | where OperationName == \"SecretGet\" | where TimeGenerated between (datetime(00:00) .. datetime(06:00)) or TimeGenerated between (datetime(22:00) .. datetime(23:59))' > 0" \
+  --condition-query 'AzureDiagnostics | where ResourceType == "VAULTS" | where OperationName == "SecretGet"' \
+  --window-size 1h \
+  --evaluation-frequency 1h \
+  --severity 1 \
+  --action-groups "$ACTION_GROUP_ID"
+```
+Gotchas:
+- Scheduled query alerts run KQL queries against Log Analytics workspace data
+- Alert rules cost approximately $1.50/month per rule
+- Evaluation frequency determines how often the query runs -- balance responsiveness vs cost
+- KQL query must return a numeric result that is compared against the threshold
+- For complex queries, test them in the Log Analytics query editor first
+
+**VERIFY** -- confirm the fix:
+```bash
+az monitor scheduled-query list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, Enabled:enabled, Severity:severity}" \
+  -o table
+# Expected: alert rules for role changes, resource deletions, Key Vault access
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+az monitor scheduled-query list \
+  --subscription "$SUBSCRIPTION_ID" \
+  -o json > "$EVIDENCE_DIR/query-alert-rules-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+### 44. Workbooks and Dashboards (TSC: CC4.1, CC7.1)
+
+**DISCOVER** -- check current state:
+```bash
+# List Azure Monitor workbooks
+az monitor app-insights workbook list \
+  --resource-group "$RESOURCE_GROUP" \
+  --category "workbook" \
+  --query "[].{Name:displayName, Kind:kind}" \
+  -o table 2>/dev/null
+
+# Check for shared dashboards
+az portal dashboard list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[].{Name:name}" \
+  -o table 2>/dev/null
+```
+- PASS: a security overview workbook or dashboard exists, providing visibility into security posture
+- FAIL: no security workbooks or dashboards
+
+**FIX** -- remediate if failing:
+```bash
+# Azure Monitor Workbooks are best created via the Portal or ARM templates.
+# Deploy the built-in security workbook templates:
+
+# Option A: Use built-in Microsoft Sentinel workbook templates (if Sentinel is deployed)
+# Portal: Microsoft Sentinel > Workbooks > Templates > search "Security"
+
+# Option B: Create a custom workbook via ARM template
+# The workbook JSON is too complex for CLI creation -- use the Portal or Terraform:
+# Portal: Azure Monitor > Workbooks > New > Add query
+# Useful queries for a security dashboard:
+
+# 1. Failed sign-ins in the last 24h:
+#    SigninLogs | where ResultType != 0 | summarize count() by UserDisplayName, ResultType, bin(TimeGenerated, 1h)
+
+# 2. Privileged role activations:
+#    AuditLogs | where OperationName == "Add member to role" | project TimeGenerated, InitiatedBy, TargetResources
+
+# 3. Resource changes:
+#    AzureActivity | where OperationNameValue endswith "/write" or OperationNameValue endswith "/delete" | summarize count() by OperationNameValue, Caller, bin(TimeGenerated, 1h)
+
+# 4. Key Vault operations:
+#    AzureDiagnostics | where ResourceType == "VAULTS" | summarize count() by OperationName, CallerIPAddress, bin(TimeGenerated, 1h)
+
+# 5. Security alerts from Defender:
+#    SecurityAlert | summarize count() by AlertName, AlertSeverity, bin(TimeGenerated, 1h)
+```
+Gotchas:
+- Workbooks are interactive and support parameters, filters, and drill-down -- preferred over static dashboards
+- Azure Portal dashboards have a 200-tile limit and limited interactivity
+- Workbooks can be shared at resource group or subscription level
+- If Microsoft Sentinel is deployed, it includes pre-built security workbook templates
+- Export workbook JSON for version control and repeatable deployment
+
+**VERIFY** -- confirm the fix:
+```bash
+# Verification is visual -- open the workbook in the Azure Portal and confirm it displays data
+# Check that the workbook queries return data:
+az monitor log-analytics query \
+  --workspace "soc2-law" \
+  --analytics-query "AzureActivity | take 1" \
+  -o table
+# Expected: at least one row (confirms data is flowing to the workspace)
+```
+
+**EVIDENCE** -- capture for auditor:
+```bash
+# Capture a summary of data flowing into the workspace
+az monitor log-analytics query \
+  --workspace "soc2-law" \
+  --analytics-query "Usage | where TimeGenerated > ago(7d) | summarize TotalGB=sum(Quantity)/1024 by DataType | order by TotalGB desc" \
+  -o json > "$EVIDENCE_DIR/workspace-data-summary-$(date +%Y%m%d-%H%M%S).json"
+```
+
+---
+
+## Terraform Azure Module
+
+A complete, production-ready Terraform module that deploys the core Azure SOC 2 controls as infrastructure-as-code.
+
+```hcl
+# ============================================================================
+# SOC 2 Azure Controls - Complete Terraform Module
+# ============================================================================
+# Usage:
+#   module "soc2_azure" {
+#     source              = "./modules/soc2-azure"
+#     company_name        = "acme"
+#     security_email      = "security@acme.com"
+#     location            = "eastus"
+#     resource_group_name = "acme-security-rg"
+#   }
+# ============================================================================
+
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.80"
+    }
+  }
+}
+
+# ============================================================================
+# Variables
+# ============================================================================
+
+variable "company_name" {
+  description = "Company name used in resource naming"
+  type        = string
+}
+
+variable "security_email" {
+  description = "Email address for security alerts"
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region for resources"
+  type        = string
+  default     = "eastus"
+}
+
+variable "resource_group_name" {
+  description = "Resource group for SOC 2 resources"
+  type        = string
+}
+
+variable "log_retention_days" {
+  description = "Log Analytics workspace retention in days"
+  type        = number
+  default     = 365
+}
+
+variable "soft_delete_retention_days" {
+  description = "Key Vault soft delete retention in days"
+  type        = number
+  default     = 90
+}
+
+variable "storage_soft_delete_retention_days" {
+  description = "Storage account blob soft delete retention in days"
+  type        = number
+  default     = 14
+}
+
+variable "nsg_flow_log_retention_days" {
+  description = "NSG flow log retention in days"
+  type        = number
+  default     = 90
+}
+
+variable "defender_plans" {
+  description = "List of Defender for Cloud plans to enable"
+  type        = list(string)
+  default = [
+    "VirtualMachines",
+    "SqlServers",
+    "AppServices",
+    "StorageAccounts",
+    "KeyVaults",
+    "Arm",
+    "Dns",
+    "OpenSourceRelationalDatabases",
+    "Containers",
+    "CloudPosture",
+  ]
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+# ============================================================================
+# Locals
+# ============================================================================
+
+locals {
+  default_tags = merge(var.tags, {
+    ManagedBy = "terraform"
+    Module    = "soc2-azure"
+    Purpose   = "SOC2-compliance"
+  })
+
+  name_prefix = var.company_name
+}
+
+# ============================================================================
+# Data Sources
+# ============================================================================
+
+data "azurerm_subscription" "current" {}
+data "azurerm_client_config" "current" {}
+
+# ============================================================================
+# Resource Group
+# ============================================================================
+
+resource "azurerm_resource_group" "soc2" {
+  name     = var.resource_group_name
+  location = var.location
+  tags     = local.default_tags
+}
+
+# ============================================================================
+# Log Analytics Workspace (365-day retention)
+# ============================================================================
+
+resource "azurerm_log_analytics_workspace" "soc2" {
+  name                = "${local.name_prefix}-soc2-law"
+  location            = azurerm_resource_group.soc2.location
+  resource_group_name = azurerm_resource_group.soc2.name
+  sku                 = "PerGB2018"
+  retention_in_days   = var.log_retention_days
+  tags                = local.default_tags
+}
+
+# ============================================================================
+# Diagnostic Settings for Activity Log
+# ============================================================================
+
+resource "azurerm_monitor_diagnostic_setting" "activity_log" {
+  name                       = "${local.name_prefix}-activity-log-export"
+  target_resource_id         = data.azurerm_subscription.current.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.soc2.id
+
+  enabled_log {
+    category = "Administrative"
+  }
+  enabled_log {
+    category = "Security"
+  }
+  enabled_log {
+    category = "ServiceHealth"
+  }
+  enabled_log {
+    category = "Alert"
+  }
+  enabled_log {
+    category = "Recommendation"
+  }
+  enabled_log {
+    category = "Policy"
+  }
+  enabled_log {
+    category = "Autoscale"
+  }
+  enabled_log {
+    category = "ResourceHealth"
+  }
+}
+
+# ============================================================================
+# Defender for Cloud - Enable all plans
+# ============================================================================
+
+resource "azurerm_security_center_subscription_pricing" "plans" {
+  for_each      = toset(var.defender_plans)
+  tier          = "Standard"
+  resource_type = each.value
+}
+
+# ============================================================================
+# Key Vault (with soft delete and purge protection)
+# ============================================================================
+
+resource "azurerm_key_vault" "soc2" {
+  name                        = "${local.name_prefix}-soc2-kv"
+  location                    = azurerm_resource_group.soc2.location
+  resource_group_name         = azurerm_resource_group.soc2.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  soft_delete_retention_days  = var.soft_delete_retention_days
+  purge_protection_enabled    = true
+  enable_rbac_authorization   = true
+  tags                        = local.default_tags
+
+  network_acls {
+    default_action = "Deny"
+    bypass         = "AzureServices"
+  }
+}
+
+# Grant the deploying identity Key Vault Administrator role
+resource "azurerm_role_assignment" "kv_admin" {
+  scope                = azurerm_key_vault.soc2.id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# Key Vault diagnostic settings
+resource "azurerm_monitor_diagnostic_setting" "keyvault" {
+  name                       = "soc2-kv-diagnostics"
+  target_resource_id         = azurerm_key_vault.soc2.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.soc2.id
+
+  enabled_log {
+    category = "AuditEvent"
+  }
+  enabled_log {
+    category = "AzurePolicyEvaluationDetails"
+  }
+  metric {
+    category = "AllMetrics"
+  }
+}
+
+# ============================================================================
+# Storage Account (secure defaults)
+# ============================================================================
+
+resource "azurerm_storage_account" "soc2" {
+  name                            = "${replace(local.name_prefix, "-", "")}soc2sa"
+  resource_group_name             = azurerm_resource_group.soc2.name
+  location                        = azurerm_resource_group.soc2.location
+  account_tier                    = "Standard"
+  account_replication_type        = "GRS"
+  min_tls_version                 = "TLS1_2"
+  enable_https_traffic_only       = true
+  allow_nested_items_to_be_public = false
+  tags                            = local.default_tags
+
+  blob_properties {
+    delete_retention_policy {
+      days = var.storage_soft_delete_retention_days
+    }
+    container_delete_retention_policy {
+      days = var.storage_soft_delete_retention_days
+    }
+  }
+
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices", "Logging", "Metrics"]
+  }
+}
+
+# Storage account diagnostic settings
+resource "azurerm_monitor_diagnostic_setting" "storage" {
+  name                       = "soc2-storage-diagnostics"
+  target_resource_id         = azurerm_storage_account.soc2.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.soc2.id
+
+  metric {
+    category = "Transaction"
+  }
+}
+
+# ============================================================================
+# NSG Flow Logs
+# ============================================================================
+
+resource "azurerm_network_watcher" "soc2" {
+  name                = "${local.name_prefix}-nw"
+  location            = azurerm_resource_group.soc2.location
+  resource_group_name = azurerm_resource_group.soc2.name
+  tags                = local.default_tags
+}
+
+# Note: NSG Flow Logs require an existing NSG. This resource is created
+# per-NSG. Below is a template -- instantiate for each NSG in your environment.
+#
+# resource "azurerm_network_watcher_flow_log" "example" {
+#   network_watcher_name = azurerm_network_watcher.soc2.name
+#   resource_group_name  = azurerm_resource_group.soc2.name
+#   name                 = "flowlog-example-nsg"
+#   network_security_group_id = azurerm_network_security_group.example.id
+#   storage_account_id        = azurerm_storage_account.soc2.id
+#   enabled                   = true
+#   version                   = 2
+#
+#   retention_policy {
+#     enabled = true
+#     days    = var.nsg_flow_log_retention_days
+#   }
+#
+#   traffic_analytics {
+#     enabled               = true
+#     workspace_id          = azurerm_log_analytics_workspace.soc2.workspace_id
+#     workspace_region      = azurerm_log_analytics_workspace.soc2.location
+#     workspace_resource_id = azurerm_log_analytics_workspace.soc2.id
+#     interval_in_minutes   = 10
+#   }
+# }
+
+# ============================================================================
+# Action Group (notification channel)
+# ============================================================================
+
+resource "azurerm_monitor_action_group" "security" {
+  name                = "${local.name_prefix}-soc2-security-alerts"
+  resource_group_name = azurerm_resource_group.soc2.name
+  short_name          = "soc2sec"
+  tags                = local.default_tags
+
+  email_receiver {
+    name          = "security-team"
+    email_address = var.security_email
+  }
+}
+
+# ============================================================================
+# Activity Log Alerts (security events)
+# ============================================================================
+
+resource "azurerm_monitor_activity_log_alert" "policy_changes" {
+  name                = "${local.name_prefix}-soc2-policy-changes"
+  resource_group_name = azurerm_resource_group.soc2.name
+  scopes              = [data.azurerm_subscription.current.id]
+  description         = "Alert on Azure Policy assignment changes"
+  tags                = local.default_tags
+
+  criteria {
+    category       = "Administrative"
+    operation_name = "Microsoft.Authorization/policyAssignments/write"
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.security.id
+  }
+}
+
+resource "azurerm_monitor_activity_log_alert" "role_changes" {
+  name                = "${local.name_prefix}-soc2-role-changes"
+  resource_group_name = azurerm_resource_group.soc2.name
+  scopes              = [data.azurerm_subscription.current.id]
+  description         = "Alert on role assignment changes"
+  tags                = local.default_tags
+
+  criteria {
+    category       = "Administrative"
+    operation_name = "Microsoft.Authorization/roleAssignments/write"
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.security.id
+  }
+}
+
+resource "azurerm_monitor_activity_log_alert" "rg_deletions" {
+  name                = "${local.name_prefix}-soc2-rg-deletions"
+  resource_group_name = azurerm_resource_group.soc2.name
+  scopes              = [data.azurerm_subscription.current.id]
+  description         = "Alert on resource group deletions"
+  tags                = local.default_tags
+
+  criteria {
+    category       = "Administrative"
+    operation_name = "Microsoft.Resources/subscriptions/resourceGroups/delete"
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.security.id
+  }
+}
+
+resource "azurerm_monitor_activity_log_alert" "nsg_changes" {
+  name                = "${local.name_prefix}-soc2-nsg-changes"
+  resource_group_name = azurerm_resource_group.soc2.name
+  scopes              = [data.azurerm_subscription.current.id]
+  description         = "Alert on NSG rule changes"
+  tags                = local.default_tags
+
+  criteria {
+    category       = "Administrative"
+    operation_name = "Microsoft.Network/networkSecurityGroups/securityRules/write"
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.security.id
+  }
+}
+
+resource "azurerm_monitor_activity_log_alert" "sql_firewall_changes" {
+  name                = "${local.name_prefix}-soc2-sql-firewall-changes"
+  resource_group_name = azurerm_resource_group.soc2.name
+  scopes              = [data.azurerm_subscription.current.id]
+  description         = "Alert on SQL Server firewall rule changes"
+  tags                = local.default_tags
+
+  criteria {
+    category       = "Administrative"
+    operation_name = "Microsoft.Sql/servers/firewallRules/write"
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.security.id
+  }
+}
+
+# ============================================================================
+# Auto-Provisioning (Defender agents)
+# ============================================================================
+
+resource "azurerm_security_center_auto_provisioning" "default" {
+  auto_provision = "On"
+}
+
+# ============================================================================
+# Outputs
+# ============================================================================
+
+output "log_analytics_workspace_id" {
+  description = "Log Analytics workspace resource ID"
+  value       = azurerm_log_analytics_workspace.soc2.id
+}
+
+output "log_analytics_workspace_name" {
+  description = "Log Analytics workspace name"
+  value       = azurerm_log_analytics_workspace.soc2.name
+}
+
+output "key_vault_id" {
+  description = "Key Vault resource ID"
+  value       = azurerm_key_vault.soc2.id
+}
+
+output "key_vault_name" {
+  description = "Key Vault name"
+  value       = azurerm_key_vault.soc2.name
+}
+
+output "storage_account_id" {
+  description = "Storage account resource ID"
+  value       = azurerm_storage_account.soc2.id
+}
+
+output "storage_account_name" {
+  description = "Storage account name"
+  value       = azurerm_storage_account.soc2.name
+}
+
+output "action_group_id" {
+  description = "Action group resource ID for security alerts"
+  value       = azurerm_monitor_action_group.security.id
+}
+```
+
+---
+
+## Important Edge Cases
+
+### TDE on Azure SQL: Enabled by Default
+
+Transparent Data Encryption is enabled by default on Azure SQL Database and **cannot be disabled** for new databases (since 2017). If you find a database with TDE disabled, it was either:
+- Created before 2017 and never had TDE enabled
+- An Azure SQL Managed Instance where TDE was explicitly disabled (possible but not recommended)
+
+To check and remediate:
+```bash
+# This should always return Enabled for Azure SQL Database
+az sql db tde show \
+  --server "your-server" \
+  --database "your-db" \
+  --resource-group "your-rg" \
+  --query "state" -o tsv
+```
+
+### Key Vault Soft Delete: Mandatory Since February 2025
+
+Soft delete is now enabled by default and **cannot be disabled** on any Key Vault. Purge protection is still optional but strongly recommended (and required for CMK encryption scenarios). Once purge protection is enabled, it **cannot be disabled**.
+
+### Defender for Cloud: Per-Plan Billing
+
+Each Defender plan is billed independently. Common pricing (approximate, check current pricing):
+| Plan | Unit | Approximate Cost |
+|---|---|---|
+| Servers P1 | per server/month | $5 |
+| Servers P2 | per server/month | $15 |
+| SQL Servers | per instance/month | $15 |
+| Storage | per storage account/month | $10 |
+| Key Vaults | per vault/month | $0.02/10k operations |
+| App Services | per instance/month | $15 |
+| Containers | per vCore/month | $7 |
+| ARM | per subscription/month | $4 |
+
+### Conditional Access: Requires Entra ID P1/P2
+
+- Basic Conditional Access policies require **Entra ID P1** license
+- Risk-based policies (sign-in risk, user risk) require **Entra ID P2** license
+- PIM (Privileged Identity Management) requires **Entra ID P2** license
+- Without these licenses, you cannot use these features -- consider purchasing the license or using alternative controls (manual access reviews, per-user MFA)
+
+### NSG Flow Logs: V2 Required
+
+NSG Flow Logs version 2 provides:
+- All V1 fields (tuples, byte counts)
+- Additional: flow state (begin/continue/end), packets, bytes per direction
+- Required for Traffic Analytics
+
+Always use V2:
+```bash
+az network watcher flow-log update \
+  --name "your-flow-log" \
+  --location "$LOCATION" \
+  --log-version 2
+```
+
+### Activity Log: 90-Day Built-In Retention
+
+The Azure Activity Log provides only 90 days of built-in retention. For SOC 2, you need 365+ days. The solution is to export Activity Log data to Log Analytics workspace (control #8) or Storage Account.
+
+```bash
+# Verify export is configured
+az monitor diagnostic-settings subscription list \
+  --subscription "$SUBSCRIPTION_ID" \
+  --query "[].{Name:name, Workspace:workspaceId}" \
+  -o table
+```
+
+Without this export, you lose visibility into events older than 90 days -- an auditor will flag this as a control failure.
+
+### "Allow Azure Services" on SQL: Overly Permissive
+
+The `AllowAllWindowsAzureIps` firewall rule (0.0.0.0 - 0.0.0.0) allows **any** Azure resource from **any** subscription and **any** tenant to connect to your SQL server. This includes:
+- Other customers' Azure resources
+- Azure resources in subscriptions you do not control
+- Compromised Azure VMs anywhere in Azure
+
+Use VNet service endpoints or private endpoints instead:
+```bash
+# Check if the rule exists
+az sql server firewall-rule list \
+  --server "your-server" \
+  --resource-group "your-rg" \
+  --query "[?startIpAddress=='0.0.0.0']" \
+  -o table
+
+# Remove it
+az sql server firewall-rule delete \
+  --server "your-server" \
+  --resource-group "your-rg" \
+  --name "AllowAllWindowsAzureIps"
+```
+
+
+---
+
 # section 03: platform controls
 
 covers source control (GitHub), identity providers (Okta, Google Workspace), and endpoint security. every control follows DISCOVER > FIX > VERIFY > EVIDENCE.
@@ -7625,6 +15688,2376 @@ curl -s -H "Authorization: SSWS ${OKTA_TOKEN}" \
 | EDR deployment | CC7.1, CC7.2 | 3.4.4 |
 | screen lock | CC6.7 | 3.4.5 |
 | deprovisioning chain | CC6.3 | 3.5 |
+
+
+---
+
+# section 03-gws: Google Workspace security controls
+
+deep Google Workspace coverage for companies using GWS as their primary identity provider. every control follows DISCOVER > FIX > VERIFY > EVIDENCE. provides both GAM commands and direct Admin SDK API calls for every operation.
+
+> this section addresses CC6.1 (logical access), CC6.2 (credentials), CC6.3 (access removal), CC7.2 (monitoring), and CC8.1 (change management) as they apply to Google Workspace identity and platform controls.
+
+> **prerequisite:** this section assumes Google Workspace Business Plus or Enterprise tier. some controls (DLP, Context-Aware Access, Alert Center API) require Enterprise tier. the section notes tier requirements where applicable.
+
+---
+
+## setup: Google Workspace Admin SDK API access
+
+before running any commands, you need authenticated access via GAM or direct API calls.
+
+### option 1: GAM (recommended for most operations)
+
+```bash
+# install GAM
+# https://github.com/GAM-team/GAM
+bash <(curl -s -S -L https://gam-shortn.appspot.com/gam-install)
+
+# verify installation
+gam version
+
+# GAM handles OAuth automatically on first run.
+# it will open a browser for admin consent. authorize with a super admin account.
+# scopes are pre-configured for common operations.
+
+# verify GAM is working
+gam info domain
+# expected output:
+# Customer ID: C01234abc
+# Primary Domain: yourdomain.com
+# ...
+```
+
+### option 2: direct API calls via service account
+
+```bash
+# 1. create a service account in Google Cloud Console:
+#    https://console.cloud.google.com/iam-admin/serviceaccounts
+#
+# 2. enable these APIs in the Google Cloud project:
+#    - Admin SDK API
+#    - Reports API
+#    - Alert Center API
+#    - Cloud Identity API (for device management)
+#
+# 3. delegate domain-wide authority to the service account:
+#    a. copy the service account's Client ID (numeric)
+#    b. go to admin.google.com > Security > Access and data control > API controls
+#    c. click "Manage Domain Wide Delegation"
+#    d. add new delegation with the Client ID and these scopes:
+#
+#       https://www.googleapis.com/auth/admin.directory.user
+#       https://www.googleapis.com/auth/admin.directory.user.security
+#       https://www.googleapis.com/auth/admin.directory.group
+#       https://www.googleapis.com/auth/admin.directory.group.member
+#       https://www.googleapis.com/auth/admin.directory.rolemanagement
+#       https://www.googleapis.com/auth/admin.directory.device.mobile
+#       https://www.googleapis.com/auth/admin.reports.audit.readonly
+#       https://www.googleapis.com/auth/apps.alerts
+#       https://www.googleapis.com/auth/cloud-identity.devices.readonly
+#
+# 4. download the service account JSON key file
+
+# get an access token (impersonating a super admin)
+ACCESS_TOKEN=$(gcloud auth print-access-token \
+  --impersonate-service-account=sa@project.iam.gserviceaccount.com)
+
+# or if using a service account key file:
+# ACCESS_TOKEN=$(python3 -c "
+# import google.auth.transport.requests
+# from google.oauth2 import service_account
+# creds = service_account.Credentials.from_service_account_file(
+#     'service-account-key.json',
+#     scopes=['https://www.googleapis.com/auth/admin.directory.user'],
+#     subject='admin@yourdomain.com'  # super admin to impersonate
+# )
+# creds.refresh(google.auth.transport.requests.Request())
+# print(creds.token)
+# ")
+
+DOMAIN="yourdomain.com"
+CUSTOMER_ID="my_customer"  # literal string "my_customer" works for your own domain
+
+# verify access
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?domain=$DOMAIN&maxResults=1" \
+  | jq '.users[0].primaryEmail'
+# expected: "someuser@yourdomain.com"
+```
+
+### pagination helper
+
+many Google API endpoints return paginated results. use this pattern for any list operation.
+
+```bash
+# generic pagination for Admin SDK list endpoints
+paginate_gws_api() {
+  local url="$1"
+  local items_key="$2"  # e.g., "users", "groups", "members"
+  local all_items="[]"
+  local page_token=""
+
+  while true; do
+    local page_url="$url"
+    if [ -n "$page_token" ]; then
+      if echo "$url" | grep -q '?'; then
+        page_url="${url}&pageToken=${page_token}"
+      else
+        page_url="${url}?pageToken=${page_token}"
+      fi
+    fi
+
+    local response
+    response=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$page_url")
+
+    local page_items
+    page_items=$(echo "$response" | jq ".${items_key} // []")
+    all_items=$(echo "$all_items $page_items" | jq -s '.[0] + .[1]')
+
+    page_token=$(echo "$response" | jq -r '.nextPageToken // empty')
+    if [ -z "$page_token" ]; then
+      break
+    fi
+  done
+
+  echo "$all_items"
+}
+
+# usage:
+# paginate_gws_api \
+#   "https://admin.googleapis.com/admin/directory/v1/users?domain=$DOMAIN&maxResults=500&projection=full" \
+#   "users"
+```
+
+---
+
+## 3-gws.1 2-step verification (2SV) enforcement
+
+2SV is the Google Workspace equivalent of MFA. it is the single most impactful credential control. without it, a phished password grants full access to email, drive, and all SSO-connected apps.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# list all users with 2SV enrollment and enforcement status
+gam print users fields primaryEmail,isEnrolledIn2Sv,isEnforcedIn2Sv,orgUnitPath \
+  > /tmp/gw-2sv-status.csv
+
+# count users not enrolled
+gam print users fields primaryEmail,isEnrolledIn2Sv \
+  | awk -F, '$NF == "False"' | wc -l
+# expected: 0 (all users enrolled)
+
+# count users not enforced
+gam print users fields primaryEmail,isEnforcedIn2Sv \
+  | awk -F, '$NF == "False"' | wc -l
+# expected: 0 (enforcement turned on for all)
+
+# --- via API ---
+# get all users with 2SV status
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    enrolled_2sv: .isEnrolledIn2Sv,
+    enforced_2sv: .isEnforcedIn2Sv,
+    org_unit: .orgUnitPath
+  }]'
+
+# find users NOT enrolled in 2SV
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | select(.isEnrolledIn2Sv == false) | {
+    email: .primaryEmail,
+    org_unit: .orgUnitPath,
+    created: .creationTime,
+    last_login: .lastLoginTime
+  }]'
+# expected: []
+# any non-empty result is a finding
+
+# summary statistics
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '{
+    total_users: (.users | length),
+    enrolled_2sv: [.users[] | select(.isEnrolledIn2Sv == true)] | length,
+    not_enrolled_2sv: [.users[] | select(.isEnrolledIn2Sv == false)] | length,
+    enforced_2sv: [.users[] | select(.isEnforcedIn2Sv == true)] | length,
+    not_enforced_2sv: [.users[] | select(.isEnforcedIn2Sv == false)] | length
+  }'
+# expected:
+# {
+#   "total_users": 50,
+#   "enrolled_2sv": 50,
+#   "not_enrolled_2sv": 0,
+#   "enforced_2sv": 50,
+#   "not_enforced_2sv": 0
+# }
+```
+
+### FIX
+
+> **2SV enforcement must be configured via Admin Console** (there is no Admin SDK API endpoint for changing this policy — it is a known limitation).
+>
+> 1. go to https://admin.google.com > Security > Authentication > 2-Step Verification
+> 2. check "Allow users to turn on 2-Step Verification"
+> 3. under Enforcement, select **"On"** and set the enforcement date (give existing users 7 days)
+> 4. under Methods, select **"Any except verification codes via text, phone call"**
+>    - this blocks SMS-based 2SV which is vulnerable to SIM-swapping attacks
+>    - allowed methods: security keys (FIDO2), Google Authenticator, Google prompts
+>    - for highest security: select "Only security key" (requires physical FIDO2 keys)
+> 5. set new user enrollment period: **1 day** (new hires must enroll within 24 hours)
+> 6. click Save
+>
+> apply the policy at the top-level OU ("/") so it inherits to all sub-OUs.
+>
+> **why no API?** Google treats 2SV enforcement as an organizational policy, not a per-user setting. the `isEnforcedIn2Sv` field on the user object is read-only — it reflects whether the OU policy applies to that user. you can read it via API but cannot set it via API.
+
+```bash
+# after setting the policy in Admin Console, monitor enrollment progress:
+# run this daily until all users are enrolled
+gam print users fields primaryEmail,isEnrolledIn2Sv,isEnforcedIn2Sv \
+  | awk -F, '$2 == "False" || $3 == "False"'
+# expected: no output once all users comply
+```
+
+### VERIFY
+
+```bash
+# --- via GAM ---
+gam print users fields primaryEmail,isEnrolledIn2Sv,isEnforcedIn2Sv \
+  | awk -F, 'NR > 1 && ($2 == "False" || $3 == "False") { found=1; print } END { if (!found) print "ALL USERS COMPLIANT" }'
+
+# --- via API ---
+NOT_COMPLIANT=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | select(.isEnrolledIn2Sv == false or .isEnforcedIn2Sv == false)]')
+
+echo "$NOT_COMPLIANT" | jq 'length'
+# expected: 0
+
+if [ "$(echo "$NOT_COMPLIANT" | jq 'length')" -gt 0 ]; then
+  echo "FINDING: the following users are not 2SV compliant:"
+  echo "$NOT_COMPLIANT" | jq '.[].primaryEmail'
+fi
+```
+
+### EVIDENCE
+
+```bash
+# --- via GAM ---
+gam print users fields primaryEmail,isEnrolledIn2Sv,isEnforcedIn2Sv,creationTime,lastLoginTime,orgUnitPath \
+  > evidence/gw-2sv-status-$(date +%Y-%m-%d).csv
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    enrolled_2sv: .isEnrolledIn2Sv,
+    enforced_2sv: .isEnforcedIn2Sv,
+    created: .creationTime,
+    last_login: .lastLoginTime,
+    org_unit: .orgUnitPath
+  }]' > evidence/gw-2sv-status-$(date +%Y-%m-%d).json
+
+echo "evidence saved: evidence/gw-2sv-status-$(date +%Y-%m-%d).json"
+echo "timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
+---
+
+## 3-gws.2 password policy
+
+password policy controls the minimum complexity and lifecycle of user passwords. auditors verify that passwords meet industry standards (NIST 800-63b or SOC 2 TSC CC6.1).
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# GAM does not directly expose password policy settings.
+# list organizational units to understand policy inheritance:
+gam print orgs fields orgUnitPath,name
+
+# check individual user password metadata (when they last changed it):
+gam print users fields primaryEmail,lastLoginTime,creationTime,changePasswordAtNextLogin
+
+# --- via API ---
+# the Admin SDK Directory API does not have a dedicated password policy endpoint.
+# password policy is set per OU via the Admin Console.
+#
+# however, you can check whether individual users are forced to change password:
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    must_change_password: .changePasswordAtNextLogin,
+    last_login: .lastLoginTime,
+    created: .creationTime
+  }]'
+
+# check for users who have "change password at next login" set (may indicate stale setup):
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | select(.changePasswordAtNextLogin == true) | .primaryEmail]'
+# expected: [] (unless new accounts are pending first login)
+```
+
+### FIX
+
+> **password policy must be set via Admin Console** (no API endpoint):
+>
+> 1. go to https://admin.google.com > Security > Authentication > Password management
+> 2. set minimum password length: **14 characters** (NIST 800-63b recommends 8+ but SOC 2 auditors typically expect 12-14)
+> 3. check **"Enforce password policy at next sign-in"**
+> 4. set password expiration: **never expire** if 2SV is enforced, or **90 days** if 2SV is not yet enforced
+>    - NIST 800-63b (2024) recommends against mandatory password rotation when MFA is in place
+>    - many auditors now accept "no expiration + MFA" — discuss with your auditor
+> 5. do not allow password reuse for **the last 12 passwords**
+> 6. apply to the root OU ("/") for org-wide coverage
+> 7. click Save
+>
+> **for new employees:** use `changePasswordAtNextLogin: true` when creating accounts via API to force password setup:
+
+```bash
+# force a specific user to change password at next login
+gam update user newemployee@yourdomain.com changepassword on
+
+# or via API
+curl -s -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/users/newemployee@yourdomain.com" \
+  -d '{"changePasswordAtNextLogin": true}'
+```
+
+### VERIFY
+
+> take a screenshot of the Admin Console password management page showing the configured settings. this is the standard evidence format for Google Workspace controls that lack API read access.
+>
+> additionally, verify user-level compliance:
+
+```bash
+# check no users have stale "change password" flags (they should have logged in)
+gam print users fields primaryEmail,changePasswordAtNextLogin \
+  | awk -F, '$NF == "True"'
+# expected: no output (all users have completed password setup)
+
+# via API
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | select(.changePasswordAtNextLogin == true) | .primaryEmail]'
+# expected: []
+```
+
+### EVIDENCE
+
+```bash
+# user password compliance report
+gam print users fields primaryEmail,lastLoginTime,creationTime,changePasswordAtNextLogin,orgUnitPath \
+  > evidence/gw-password-compliance-$(date +%Y-%m-%d).csv
+
+# via API
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&projection=full&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    must_change_password: .changePasswordAtNextLogin,
+    last_login: .lastLoginTime,
+    created: .creationTime,
+    org_unit: .orgUnitPath
+  }]' > evidence/gw-password-compliance-$(date +%Y-%m-%d).json
+
+# also save the Admin Console screenshot as:
+# evidence/gw-password-policy-screenshot-$(date +%Y-%m-%d).png
+```
+
+---
+
+## 3-gws.3 session management
+
+session controls determine how long users can stay signed in before re-authentication. long sessions increase risk if a device is compromised.
+
+### DISCOVER
+
+```bash
+# session length is configured at the OU level via Admin Console.
+# there is no Admin SDK endpoint to read session policy.
+
+# however, you can verify session behavior by checking login frequency in audit logs:
+
+# --- via GAM ---
+gam report login start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -20
+
+# --- via API ---
+# check login events for the past 7 days to observe session patterns
+SEVEN_DAYS_AGO=$(date -v-7d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "7 days ago" +%Y-%m-%dT00:00:00.000Z)
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$SEVEN_DAYS_AGO&maxResults=100" \
+  | jq '[.items[:10] | .[] | {
+    user: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    login_type: (.events[0].parameters[]? | select(.name == "login_type") | .value),
+    ip: .ipAddress
+  }]'
+
+# check for suspicious login patterns (multiple re-auths = session too short,
+# zero re-auths = session too long or no enforcement)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$SEVEN_DAYS_AGO&maxResults=1000" \
+  | jq '[.items[] | .actor.email] | group_by(.) | map({user: .[0], login_count_7d: length}) | sort_by(.login_count_7d) | reverse[:10]'
+# shows top 10 users by login frequency — useful to understand session behavior
+```
+
+### FIX
+
+> **session controls must be set via Admin Console:**
+>
+> 1. go to https://admin.google.com > Security > Access and data control > Google session control
+>    - set web session duration: **12 hours** (forces re-auth after 12h of inactivity)
+>    - this applies to all Google services (Gmail, Drive, Docs, etc.)
+>
+> 2. go to https://admin.google.com > Security > Access and data control > Google Cloud session control
+>    - set re-authentication frequency: **12 hours**
+>    - set re-authentication policy: **require password** (or security key)
+>    - this applies to Google Cloud Console and gcloud CLI
+>
+> 3. consider enabling trusted apps exception:
+>    - if mobile apps (Gmail, Drive) need longer sessions: set mobile session to 24 hours
+>    - Admin Console: Security > Access and data control > Google session control > Mobile session
+>
+> **note on OAuth tokens:** Google Workspace OAuth tokens (used by third-party apps) have separate lifetimes. revoking a user's session does not revoke OAuth tokens. see section 3-gws.8 (OAuth App Access Control) for managing those.
+
+### VERIFY
+
+> take a screenshot of the Admin Console session control pages showing:
+> - Google session control: 12h web, 24h mobile
+> - Google Cloud session control: 12h with re-auth required
+
+```bash
+# verify session enforcement by checking recent login activity
+# users should show regular re-authentication events
+
+# --- via GAM ---
+gam report login start_date $(date -v-1d +%Y-%m-%d 2>/dev/null || date -d "yesterday" +%Y-%m-%d) \
+  > /tmp/gw-login-yesterday.csv
+wc -l /tmp/gw-login-yesterday.csv
+# if users are logging in daily, session controls are working
+
+# --- via API ---
+YESTERDAY=$(date -v-1d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "yesterday" +%Y-%m-%dT00:00:00.000Z)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$YESTERDAY&maxResults=10" \
+  | jq '.items | length'
+# expected: > 0 (users are re-authenticating)
+```
+
+### EVIDENCE
+
+```bash
+# export login activity as evidence of session enforcement
+gam report login start_date $(date -v-30d +%Y-%m-%d 2>/dev/null || date -d "30 days ago" +%Y-%m-%d) \
+  > evidence/gw-login-activity-$(date +%Y-%m-%d).csv
+
+# via API
+THIRTY_DAYS_AGO=$(date -v-30d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "30 days ago" +%Y-%m-%dT00:00:00.000Z)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$THIRTY_DAYS_AGO&maxResults=1000" \
+  | jq '[.items[] | {
+    user: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    ip: .ipAddress
+  }]' > evidence/gw-login-events-$(date +%Y-%m-%d).json
+
+# also save Admin Console screenshots as:
+# evidence/gw-session-policy-screenshot-$(date +%Y-%m-%d).png
+# evidence/gw-cloud-session-policy-screenshot-$(date +%Y-%m-%d).png
+```
+
+---
+
+## 3-gws.4 user provisioning and lifecycle management
+
+user lifecycle management covers account creation, status tracking, and detection of stale accounts. this is the read side — deprovisioning (the write side) is covered separately in 3-gws.5.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+
+# all active users with key metadata
+gam print users fields primaryEmail,suspended,creationTime,lastLoginTime,orgUnitPath,isAdmin \
+  query "isSuspended=false" > /tmp/gw-active-users.csv
+
+# suspended users (should match terminated employees)
+gam print users query "isSuspended=true" \
+  fields primaryEmail,suspensionReason,creationTime,lastLoginTime
+
+# recently created users (last 30 days — review for unauthorized account creation)
+gam print users fields primaryEmail,creationTime,orgUnitPath \
+  query "isSuspended=false" \
+  | awk -F, -v cutoff="$(date -v-30d +%Y-%m-%d 2>/dev/null || date -d '30 days ago' +%Y-%m-%d)" \
+    'NR > 1 && $2 >= cutoff'
+
+# users who have never logged in (potential stale accounts or misconfigured accounts)
+gam print users fields primaryEmail,lastLoginTime,creationTime \
+  query "isSuspended=false" \
+  | awk -F, 'NR > 1 && ($2 == "" || $2 == "Never logged in")'
+
+# users inactive for 90+ days (candidates for suspension)
+gam print users fields primaryEmail,lastLoginTime,creationTime \
+  query "isSuspended=false" \
+  | awk -F, -v cutoff="$(date -v-90d +%Y-%m-%d 2>/dev/null || date -d '90 days ago' +%Y-%m-%d)" \
+    'NR > 1 && $2 != "" && $2 < cutoff'
+
+# --- via API ---
+
+# all active users
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isSuspended=false&maxResults=500&projection=full" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    name: .name.fullName,
+    created: .creationTime,
+    last_login: .lastLoginTime,
+    org_unit: .orgUnitPath,
+    is_admin: .isAdmin,
+    is_delegated_admin: .isDelegatedAdmin,
+    enrolled_2sv: .isEnrolledIn2Sv
+  }]'
+
+# suspended users
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isSuspended=true&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    suspended: .suspended,
+    suspension_reason: .suspensionReason,
+    last_login: .lastLoginTime
+  }]'
+
+# stale accounts: active but no login in 90+ days
+NINETY_DAYS_AGO=$(date -v-90d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "90 days ago" +%Y-%m-%dT00:00:00.000Z)
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isSuspended=false&maxResults=500&projection=full" \
+  | jq --arg cutoff "$NINETY_DAYS_AGO" '[.users[] | select(
+    .lastLoginTime == null or .lastLoginTime < $cutoff
+  ) | {
+    email: .primaryEmail,
+    last_login: (.lastLoginTime // "never"),
+    created: .creationTime,
+    org_unit: .orgUnitPath
+  }]'
+# any results here need investigation — either suspend or verify the account is still needed
+```
+
+### FIX
+
+```bash
+# stale accounts should be suspended, not deleted.
+# deletion removes audit trail; suspension preserves it.
+
+# --- via GAM ---
+# suspend a stale account
+gam update user stale@yourdomain.com suspended on
+
+# --- via API ---
+curl -s -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/users/stale@yourdomain.com" \
+  -d '{"suspended": true}'
+
+# expected response: user object with "suspended": true
+
+# for new user provisioning, use standardized creation:
+# --- via GAM ---
+gam create user newuser@yourdomain.com \
+  firstname "Jane" lastname "Doe" \
+  password "TemporaryP@ss123!" \
+  changepassword on \
+  org "/Engineering"
+
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/users" \
+  -d '{
+    "primaryEmail": "newuser@yourdomain.com",
+    "name": {"givenName": "Jane", "familyName": "Doe"},
+    "password": "TemporaryP@ss123!",
+    "changePasswordAtNextLogin": true,
+    "orgUnitPath": "/Engineering"
+  }'
+```
+
+### VERIFY
+
+```bash
+# verify no stale accounts remain after cleanup
+gam print users fields primaryEmail,lastLoginTime query "isSuspended=false" \
+  | awk -F, -v cutoff="$(date -v-90d +%Y-%m-%d 2>/dev/null || date -d '90 days ago' +%Y-%m-%d)" \
+    'NR > 1 && $2 != "" && $2 < cutoff'
+# expected: no output
+
+# verify suspended accounts match HR termination list
+gam print users query "isSuspended=true" fields primaryEmail | wc -l
+```
+
+### EVIDENCE
+
+```bash
+gam print users fields primaryEmail,suspended,suspensionReason,creationTime,lastLoginTime,orgUnitPath,isAdmin,isEnrolledIn2Sv \
+  > evidence/gw-all-users-$(date +%Y-%m-%d).csv
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&maxResults=500&projection=full" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    suspended: .suspended,
+    suspension_reason: .suspensionReason,
+    created: .creationTime,
+    last_login: .lastLoginTime,
+    org_unit: .orgUnitPath,
+    is_admin: .isAdmin,
+    enrolled_2sv: .isEnrolledIn2Sv
+  }]' > evidence/gw-all-users-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.5 user deprovisioning (the critical control)
+
+> **this is the single most critical control in SOC 2 compliance.** 68% of qualified (failed) SOC 2 opinions cite user deprovisioning failures. the control is CC6.3: "The entity disables or removes access to information and assets when no longer needed." if a terminated employee retains access for even one day beyond the SLA, it is a finding.
+
+deprovisioning in Google Workspace = suspend + revoke tokens + transfer data + remove group memberships + wipe devices.
+
+### DISCOVER
+
+```bash
+# step 1: get all active Google Workspace users
+# --- via GAM ---
+gam print users query "isSuspended=false" \
+  fields primaryEmail,lastLoginTime,creationTime \
+  > /tmp/gw-active-users.csv
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isSuspended=false&maxResults=500" \
+  | jq '[.[] | {email: .primaryEmail}]' \
+  > /tmp/gw-active-users.json
+
+# step 2: get terminated employees from HR system
+# (same as Okta section — depends on your HR system)
+# --- Rippling ---
+# curl -s -H "Authorization: Bearer ${RIPPLING_TOKEN}" \
+#   "https://api.rippling.com/platform/api/employees?employment_status=TERMINATED" \
+#   | jq '[.[] | {email: .work_email, terminated_date: .termination_date}]' \
+#   > /tmp/hr-terminated.json
+
+# --- BambooHR ---
+# curl -s -H "Authorization: Basic $(echo -n "${BAMBOO_API_KEY}:x" | base64)" \
+#   "https://api.bamboohr.com/api/gateway.php/{{BAMBOO_SUBDOMAIN}}/v1/reports/custom?format=JSON" \
+#   -d '{"filters":{"lastChanged":{"includeNull":"no"}},"fields":["workEmail","status","terminationDate"]}' \
+#   | jq '[.employees[] | select(.status == "Inactive") | {email: .workEmail, terminated_date: .terminationDate}]' \
+#   > /tmp/hr-terminated.json
+
+# step 3: find terminated employees who still have active Google Workspace accounts
+jq -r '.[].email' /tmp/hr-terminated.json | while read email; do
+  match=$(gam print users query "email:${email}" fields primaryEmail,suspended \
+    | awk -F, 'NR > 1 && $2 == "False" { print $1 }')
+  if [ -n "$match" ]; then
+    echo "CRITICAL: terminated employee still active in Google Workspace: ${email}"
+  fi
+done
+
+# any output here is a SOC 2 finding
+```
+
+### FIX
+
+the fix has three tiers: automated provisioning (prevents the problem), manual deprovisioning procedure (handles exceptions), and weekly reconciliation (catches anything that falls through).
+
+**tier 1: HR-to-Google Workspace automated provisioning (the real fix)**
+
+```bash
+# Google Workspace supports two approaches for automated user lifecycle:
+#
+# option A: SCIM via Cloud Identity
+#   - Google Workspace supports inbound SCIM 2.0 via Cloud Identity
+#   - HR system sends SCIM PATCH with active: false
+#   - Google Workspace suspends the user
+#   - supported by: Okta, Rippling, BambooHR (via middleware), Workday
+#
+# option B: Admin SDK API integration
+#   - build a custom integration that:
+#     1. polls HR system for status changes (or receives webhooks)
+#     2. calls Admin SDK to suspend user
+#     3. calls token revocation API
+#     4. calls data transfer API
+#     5. logs the entire operation
+#
+# option C: Google Workspace auto-licensing with Cloud Identity
+#   - if using Cloud Identity Premium, Google can auto-suspend based on
+#     external IdP signals
+
+# verify SCIM or automated provisioning is working:
+# check recent user suspension events in admin audit log
+
+# --- via GAM ---
+gam report admin event_name=SUSPEND_USER \
+  start_date $(date -v-30d +%Y-%m-%d 2>/dev/null || date -d "30 days ago" +%Y-%m-%d)
+
+# --- via API ---
+THIRTY_DAYS_AGO=$(date -v-30d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "30 days ago" +%Y-%m-%dT00:00:00.000Z)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin?eventName=SUSPEND_USER&startTime=$THIRTY_DAYS_AGO&maxResults=100" \
+  | jq '[.items[] | {
+    actor: .actor.email,
+    target: (.events[0].parameters[]? | select(.name == "USER_EMAIL") | .value),
+    time: .id.time
+  }]'
+```
+
+**tier 2: manual deprovisioning script (for edge cases and emergencies)**
+
+```bash
+#!/bin/bash
+# offboard-gws.sh — Google Workspace deprovisioning
+# usage: ./offboard-gws.sh user@domain.com manager@domain.com "involuntary termination"
+
+set -euo pipefail
+
+USER_EMAIL="$1"
+MANAGER_EMAIL="$2"
+REASON="${3:-voluntary termination}"
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+LOG_FILE="evidence/deprovision-${USER_EMAIL}-${TIMESTAMP}.log"
+
+mkdir -p evidence
+
+log() {
+  echo "[$(date -u +%H:%M:%S)] $1" | tee -a "$LOG_FILE"
+}
+
+log "=== DEPROVISIONING: ${USER_EMAIL} ==="
+log "Manager: ${MANAGER_EMAIL}"
+log "Reason: ${REASON}"
+log "Started: ${TIMESTAMP}"
+log ""
+
+# step 1: suspend user (immediately kills all web sessions)
+log "--- step 1: suspend account ---"
+gam update user "$USER_EMAIL" suspended on 2>&1 | tee -a "$LOG_FILE"
+# or via API:
+# curl -s -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   -H "Content-Type: application/json" \
+#   "https://admin.googleapis.com/admin/directory/v1/users/$USER_EMAIL" \
+#   -d '{"suspended": true}'
+log "[OK] Account suspended"
+
+# step 2: revoke all OAuth tokens (third-party app access)
+log "--- step 2: revoke OAuth tokens ---"
+TOKENS=$(gam user "$USER_EMAIL" show tokens 2>/dev/null || echo "")
+if [ -n "$TOKENS" ]; then
+  gam user "$USER_EMAIL" deprovision 2>&1 | tee -a "$LOG_FILE"
+  log "[OK] OAuth tokens revoked"
+else
+  log "[SKIP] No OAuth tokens found"
+fi
+
+# or via API:
+# TOKEN_LIST=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   "https://admin.googleapis.com/admin/directory/v1/users/$USER_EMAIL/tokens")
+# echo "$TOKEN_LIST" | jq -r '.items[]?.clientId' | while read client_id; do
+#   if [ -n "$client_id" ] && [ "$client_id" != "null" ]; then
+#     curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+#       "https://admin.googleapis.com/admin/directory/v1/users/$USER_EMAIL/tokens/$client_id"
+#     log "[OK] Revoked token for client: $client_id"
+#   fi
+# done
+
+# step 3: revoke app-specific passwords (if any — used for IMAP, etc.)
+log "--- step 3: revoke app-specific passwords ---"
+gam user "$USER_EMAIL" show asp 2>/dev/null | tee -a "$LOG_FILE"
+gam user "$USER_EMAIL" delete asp 2>&1 | tee -a "$LOG_FILE" || log "[SKIP] No ASPs found"
+
+# or via API:
+# ASP_LIST=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   "https://admin.googleapis.com/admin/directory/v1/users/$USER_EMAIL/asps")
+# echo "$ASP_LIST" | jq -r '.items[]?.codeId' | while read code_id; do
+#   if [ -n "$code_id" ] && [ "$code_id" != "null" ]; then
+#     curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+#       "https://admin.googleapis.com/admin/directory/v1/users/$USER_EMAIL/asps/$code_id"
+#     log "[OK] Revoked ASP: $code_id"
+#   fi
+# done
+
+# step 4: transfer Drive files to manager
+log "--- step 4: transfer Drive files ---"
+gam create datatransfer "$USER_EMAIL" gdrive "$MANAGER_EMAIL" privacy_level shared,private \
+  2>&1 | tee -a "$LOG_FILE"
+log "[OK] Drive transfer initiated to ${MANAGER_EMAIL}"
+
+# or via API (Data Transfer API):
+# TRANSFER=$(curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   -H "Content-Type: application/json" \
+#   "https://admin.googleapis.com/admin/datatransfer/v1/transfers" \
+#   -d "{
+#     \"oldOwnerUserId\": \"$(gam info user $USER_EMAIL | grep 'User ID' | awk '{print $NF}')\",
+#     \"newOwnerUserId\": \"$(gam info user $MANAGER_EMAIL | grep 'User ID' | awk '{print $NF}')\",
+#     \"applicationDataTransfers\": [{
+#       \"applicationId\": \"55656082996\",
+#       \"applicationTransferParams\": [{
+#         \"key\": \"PRIVACY_LEVEL\",
+#         \"value\": [\"SHARED\", \"PRIVATE\"]
+#       }]
+#     }]
+#   }")
+# TRANSFER_ID=$(echo "$TRANSFER" | jq -r '.id')
+# log "[OK] Drive transfer initiated: $TRANSFER_ID"
+
+# step 5: remove from all groups
+log "--- step 5: remove group memberships ---"
+gam user "$USER_EMAIL" show groups | tee -a "$LOG_FILE"
+gam user "$USER_EMAIL" delete groups 2>&1 | tee -a "$LOG_FILE"
+log "[OK] Removed from all groups"
+
+# or via API:
+# GROUPS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   "https://admin.googleapis.com/admin/directory/v1/groups?userKey=$USER_EMAIL&maxResults=200")
+# echo "$GROUPS" | jq -r '.groups[]?.email' | while read group_email; do
+#   curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+#     "https://admin.googleapis.com/admin/directory/v1/groups/$group_email/members/$USER_EMAIL"
+#   log "[OK] Removed from group: $group_email"
+# done
+
+# step 6: wipe mobile devices
+log "--- step 6: wipe mobile devices ---"
+DEVICES=$(gam print mobile query "email:${USER_EMAIL}" fields resourceId,status 2>/dev/null || echo "")
+if [ -n "$DEVICES" ]; then
+  gam print mobile query "email:${USER_EMAIL}" fields resourceId \
+    | awk -F, 'NR > 1 { print $1 }' | while read device_id; do
+      gam update mobile "$device_id" action account_wipe
+      log "[OK] Account wipe initiated for device: $device_id"
+    done
+else
+  log "[SKIP] No mobile devices found"
+fi
+
+# or via API:
+# MOBILE_DEVICES=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile?query=email:$USER_EMAIL")
+# echo "$MOBILE_DEVICES" | jq -r '.mobiledevices[]?.resourceId' | while read device_id; do
+#   if [ -n "$device_id" ] && [ "$device_id" != "null" ]; then
+#     curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+#       -H "Content-Type: application/json" \
+#       "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile/$device_id/action" \
+#       -d '{"action": "account_wipe"}'
+#     log "[OK] Account wipe initiated for device: $device_id"
+#   fi
+# done
+
+# step 7: set auto-reply on email (optional but professional)
+log "--- step 7: set out-of-office auto-reply ---"
+gam user "$USER_EMAIL" vacation on \
+  subject "No longer at company" \
+  message "This person is no longer with the organization. Please contact ${MANAGER_EMAIL} for assistance." \
+  2>&1 | tee -a "$LOG_FILE"
+log "[OK] Auto-reply set"
+
+# summary
+log ""
+log "=== DEPROVISIONING COMPLETE ==="
+log "User: ${USER_EMAIL}"
+log "Suspended: yes"
+log "Tokens revoked: yes"
+log "Drive transferred to: ${MANAGER_EMAIL}"
+log "Groups removed: yes"
+log "Devices wiped: yes"
+log "Auto-reply set: yes"
+log "Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+log "Performed by: $(whoami)"
+log ""
+log "Save ${LOG_FILE} as audit evidence."
+```
+
+**deprovisioning SLA:**
+- involuntary termination: **1 hour** (from HR notification to account suspension)
+- voluntary termination: **end of last working day**
+- the SLA matters because auditors check the delta between HR termination date and account suspension timestamp
+
+**tier 3: weekly reconciliation script**
+
+```bash
+#!/bin/bash
+# gw-deprovision-reconciliation.sh — run weekly via cron
+# compares HR terminated list with active Google Workspace accounts
+# cron: 0 9 * * 1 /opt/scripts/gw-deprovision-reconciliation.sh
+
+set -euo pipefail
+
+ALERT_EMAIL="{{SECURITY_LEAD_EMAIL}}"
+DATE=$(date +%Y-%m-%d)
+REPORT_FILE="evidence/gw-reconciliation-${DATE}.md"
+
+echo "# Google Workspace Deprovisioning Reconciliation Report" > "$REPORT_FILE"
+echo "**Date:** ${DATE}" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# get active Google Workspace users
+GWS_ACTIVE=$(gam print users query "isSuspended=false" fields primaryEmail \
+  | awk -F, 'NR > 1 { print tolower($1) }')
+
+# get HR active employee list
+# replace with your HR system API call:
+# HR_ACTIVE=$(curl -s -H "Authorization: Bearer ${HR_TOKEN}" \
+#   "https://api.yourhrsystem.com/employees?status=active" \
+#   | jq -r '.[].email' | tr '[:upper:]' '[:lower:]')
+
+# compare: find GWS users NOT in the HR active list
+echo "## Users in Google Workspace but NOT in HR system" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+ORPHAN_COUNT=0
+for gws_email in $GWS_ACTIVE; do
+  if ! echo "$HR_ACTIVE" | grep -qi "^${gws_email}$"; then
+    echo "- ALERT: ${gws_email} — active in GWS, not found in HR active list" >> "$REPORT_FILE"
+    ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
+  fi
+done
+
+echo "" >> "$REPORT_FILE"
+echo "## Summary" >> "$REPORT_FILE"
+echo "- Active GWS users: $(echo "$GWS_ACTIVE" | wc -l | tr -d ' ')" >> "$REPORT_FILE"
+echo "- Active HR employees: $(echo "$HR_ACTIVE" | wc -l | tr -d ' ')" >> "$REPORT_FILE"
+echo "- Orphaned accounts found: ${ORPHAN_COUNT}" >> "$REPORT_FILE"
+
+if [ "$ORPHAN_COUNT" -gt 0 ]; then
+  echo "" >> "$REPORT_FILE"
+  echo "**ACTION REQUIRED:** investigate orphaned accounts above." >> "$REPORT_FILE"
+  # send alert
+  # echo "Orphaned GWS accounts found: ${ORPHAN_COUNT}. See ${REPORT_FILE}" \
+  #   | mail -s "GWS Reconciliation Alert" "$ALERT_EMAIL"
+fi
+
+echo "report saved: ${REPORT_FILE}"
+```
+
+### VERIFY
+
+```bash
+# after running deprovisioning, verify the user is fully disabled:
+
+# --- via GAM ---
+gam info user user@yourdomain.com | grep -E "suspended|lastLogin|Admin"
+# expected: Account Suspended: true
+
+# check token revocation
+gam user user@yourdomain.com show tokens
+# expected: no tokens
+
+# check group removal
+gam user user@yourdomain.com show groups
+# expected: no groups
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users/user@yourdomain.com?projection=full" \
+  | jq '{
+    email: .primaryEmail,
+    suspended: .suspended,
+    suspension_reason: .suspensionReason,
+    last_login: .lastLoginTime
+  }'
+# expected: suspended: true
+
+# verify no remaining tokens
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users/user@yourdomain.com/tokens" \
+  | jq '.items // [] | length'
+# expected: 0
+```
+
+### EVIDENCE
+
+```bash
+# save deprovisioning evidence for audit
+# the offboard-gws.sh script already creates a log file per user.
+# additionally, export system-level evidence:
+
+# all suspension events in the audit period
+gam report admin event_name=SUSPEND_USER \
+  start_date {{AUDIT_PERIOD_START}} \
+  > evidence/gw-suspension-events-$(date +%Y-%m-%d).csv
+
+# via API
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin?eventName=SUSPEND_USER&startTime={{AUDIT_PERIOD_START}}T00:00:00Z&maxResults=1000" \
+  | jq '[.items[] | {
+    actor: .actor.email,
+    target_user: (.events[0].parameters[]? | select(.name == "USER_EMAIL") | .value),
+    time: .id.time,
+    ip: .ipAddress
+  }]' > evidence/gw-suspension-events-$(date +%Y-%m-%d).json
+
+# data transfer events
+gam report admin event_name=TRANSFER_DATA_INITIATED \
+  start_date {{AUDIT_PERIOD_START}} \
+  > evidence/gw-data-transfers-$(date +%Y-%m-%d).csv
+
+# reconciliation reports (saved by the weekly script)
+# evidence/gw-reconciliation-*.md
+```
+
+---
+
+## 3-gws.6 group-based access management
+
+group-based access is how you grant and revoke access at scale. access should always flow through groups, not direct user permissions. auditors verify that access is managed via groups because it makes access reviews tractable.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# list all groups with member counts
+gam print groups fields email,name,directMembersCount,description
+
+# list members of a specific group
+gam print group-members group engineering@yourdomain.com \
+  fields email,role,type
+
+# list all groups and all members (full export)
+gam print group-members > /tmp/gw-all-group-members.csv
+
+# --- via API ---
+# list all groups
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/groups?customer=$CUSTOMER_ID&maxResults=200" \
+  | jq '[.groups[] | {
+    email: .email,
+    name: .name,
+    member_count: .directMembersCount,
+    description: .description
+  }]'
+
+# list members of a specific group
+GROUP_EMAIL="engineering@yourdomain.com"
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/groups/$GROUP_EMAIL/members?maxResults=200" \
+  | jq '[.members[] | {
+    email: .email,
+    role: .role,
+    type: .type,
+    status: .status
+  }]'
+
+# find groups with external members (potential security risk)
+gam print group-members | awk -F, -v domain="yourdomain.com" \
+  'NR > 1 && $1 !~ domain { print "EXTERNAL MEMBER:", $0 }'
+```
+
+### FIX
+
+```bash
+# add user to a group
+# --- via GAM ---
+gam update group engineering@yourdomain.com add member user@yourdomain.com
+
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/groups/engineering@yourdomain.com/members" \
+  -d '{
+    "email": "user@yourdomain.com",
+    "role": "MEMBER"
+  }'
+
+# remove user from a group
+# --- via GAM ---
+gam update group engineering@yourdomain.com remove member user@yourdomain.com
+
+# --- via API ---
+curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/groups/engineering@yourdomain.com/members/user@yourdomain.com"
+
+# create a new group (for role-based access)
+# --- via GAM ---
+gam create group security-team@yourdomain.com \
+  name "Security Team" \
+  description "Security team members — grants access to security tools"
+
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/groups" \
+  -d '{
+    "email": "security-team@yourdomain.com",
+    "name": "Security Team",
+    "description": "Security team members — grants access to security tools"
+  }'
+```
+
+### VERIFY
+
+```bash
+# verify group membership matches expected state
+# --- via GAM ---
+gam print group-members group engineering@yourdomain.com fields email,role \
+  | sort
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/groups/engineering@yourdomain.com/members?maxResults=200" \
+  | jq '[.members[] | {email: .email, role: .role}] | sort_by(.email)'
+
+# check for empty groups (may indicate misconfiguration)
+gam print groups fields email,directMembersCount \
+  | awk -F, 'NR > 1 && $NF == "0" { print "EMPTY GROUP:", $1 }'
+```
+
+### EVIDENCE
+
+```bash
+# full group membership export
+gam print groups fields email,name,directMembersCount \
+  > evidence/gw-groups-$(date +%Y-%m-%d).csv
+
+gam print group-members fields email,role,type \
+  > evidence/gw-group-memberships-$(date +%Y-%m-%d).csv
+
+# via API (all groups with members)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/groups?customer=$CUSTOMER_ID&maxResults=200" \
+  | jq -r '.groups[].email' | while read group_email; do
+    members=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+      "https://admin.googleapis.com/admin/directory/v1/groups/$group_email/members?maxResults=200" \
+      | jq '[.members[]? | {email: .email, role: .role}]')
+    echo "{\"group\": \"$group_email\", \"members\": $members}"
+  done | jq -s '.' > evidence/gw-group-memberships-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.7 admin roles audit
+
+admin accounts have unrestricted access to all organizational data and settings. the number of super admins should be minimal (2-3 for redundancy, never 1, never more than 5). auditors specifically check this.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# list all admin users
+gam print admins
+
+# list super admins specifically
+gam print users query "isAdmin=true" fields primaryEmail,isAdmin,isDelegatedAdmin,lastLoginTime
+
+# list delegated admins (users with partial admin roles)
+gam print users query "isDelegatedAdmin=true" fields primaryEmail,isDelegatedAdmin,lastLoginTime
+
+# --- via API ---
+# super admins
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isAdmin=true&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    is_super_admin: .isAdmin,
+    is_delegated_admin: .isDelegatedAdmin,
+    last_login: .lastLoginTime,
+    created: .creationTime,
+    enrolled_2sv: .isEnrolledIn2Sv
+  }]'
+
+# list all admin role assignments
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roleassignments?maxResults=200" \
+  | jq '[.items[] | {
+    role_id: .roleId,
+    assigned_to: .assignedTo,
+    scope_type: .scopeType,
+    org_unit_id: .orgUnitId
+  }]'
+
+# list all defined admin roles (built-in + custom)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roles?maxResults=100" \
+  | jq '[.items[] | {
+    role_id: .roleId,
+    role_name: .roleName,
+    is_system_role: .isSystemRole,
+    is_super_admin_role: .isSuperAdminRole,
+    privileges: [.rolePrivileges[]? | .privilegeName] | length
+  }]'
+
+# cross-reference: get human-readable admin role assignments
+ROLES=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roles?maxResults=100")
+ASSIGNMENTS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roleassignments?maxResults=200")
+
+echo "$ASSIGNMENTS" | jq -r '.items[]? | "\(.assignedTo) \(.roleId)"' | while read user_id role_id; do
+  role_name=$(echo "$ROLES" | jq -r --arg rid "$role_id" '.items[]? | select(.roleId == $rid) | .roleName')
+  user_email=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+    "https://admin.googleapis.com/admin/directory/v1/users/$user_id" | jq -r '.primaryEmail')
+  echo "{\"email\": \"$user_email\", \"role\": \"$role_name\"}"
+done | jq -s '.'
+```
+
+### FIX
+
+```bash
+# remove unnecessary admin access
+# --- via GAM ---
+gam update user user@yourdomain.com admin off
+
+# --- via API ---
+# to remove a role assignment, you need the roleAssignmentId:
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roleassignments?maxResults=200" \
+  | jq '.items[] | select(.assignedTo == "USER_ID_HERE") | .roleAssignmentId'
+
+# then delete it:
+# curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+#   "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roleassignments/ROLE_ASSIGNMENT_ID"
+
+# best practices:
+# - 2-3 super admins maximum (CTO, security lead, + 1 backup)
+# - all admins MUST have 2SV enrolled with security keys (not just TOTP)
+# - use delegated admin roles for specific tasks instead of super admin
+# - create custom roles with least-privilege scoping
+
+# create a custom admin role with limited privileges:
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roles" \
+  -d '{
+    "roleName": "User Manager",
+    "roleDescription": "Can manage user accounts but not org settings",
+    "rolePrivileges": [
+      {"privilegeName": "USERS_RETRIEVE", "serviceId": "00haapch16h1ysv"},
+      {"privilegeName": "USERS_UPDATE", "serviceId": "00haapch16h1ysv"}
+    ]
+  }'
+```
+
+### VERIFY
+
+```bash
+# re-check admin list after cleanup
+# --- via GAM ---
+gam print users query "isAdmin=true" fields primaryEmail,isAdmin,isEnrolledIn2Sv
+# expected: 2-3 super admins, all with 2SV enrolled
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isAdmin=true&maxResults=500" \
+  | jq '{
+    super_admin_count: [.users[] | select(.isAdmin == true)] | length,
+    super_admins: [.users[] | select(.isAdmin == true) | {
+      email: .primaryEmail,
+      has_2sv: .isEnrolledIn2Sv
+    }]
+  }'
+# expected:
+# {
+#   "super_admin_count": 2,
+#   "super_admins": [
+#     {"email": "cto@yourdomain.com", "has_2sv": true},
+#     {"email": "security@yourdomain.com", "has_2sv": true}
+#   ]
+# }
+
+# verify ALL admins have 2SV (this is a hard requirement)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isAdmin=true&maxResults=500" \
+  | jq '[.users[] | select(.isEnrolledIn2Sv == false) | .primaryEmail]'
+# expected: [] (empty — all admins have 2SV)
+# any non-empty result is a CRITICAL finding
+```
+
+### EVIDENCE
+
+```bash
+gam print admins > evidence/gw-admins-$(date +%Y-%m-%d).csv
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users?customer=$CUSTOMER_ID&query=isAdmin=true&maxResults=500" \
+  | jq '[.users[] | {
+    email: .primaryEmail,
+    is_super_admin: .isAdmin,
+    is_delegated_admin: .isDelegatedAdmin,
+    enrolled_2sv: .isEnrolledIn2Sv,
+    last_login: .lastLoginTime,
+    created: .creationTime
+  }]' > evidence/gw-admins-$(date +%Y-%m-%d).json
+
+# role assignments
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/roleassignments?maxResults=200" \
+  > evidence/gw-role-assignments-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.8 OAuth app access control
+
+third-party OAuth apps that users have authorized can access Google data (email, drive, calendar). uncontrolled OAuth grants are a major data exfiltration risk. auditors check that you inventory and control which apps can access organizational data.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# list all OAuth tokens (apps that users have authorized)
+gam all users show tokens > /tmp/gw-oauth-tokens.csv
+
+# or for a specific user
+gam user user@yourdomain.com show tokens
+
+# --- via API ---
+# list tokens for a specific user
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users/user@yourdomain.com/tokens" \
+  | jq '[.items[]? | {
+    client_id: .clientId,
+    display_text: .displayText,
+    scopes: .scopes,
+    native_app: .nativeApp,
+    user_key: .userKey
+  }]'
+
+# to get all users' tokens (audit entire organization):
+gam print users fields primaryEmail query "isSuspended=false" \
+  | awk -F, 'NR > 1 { print $1 }' | while read user_email; do
+    tokens=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+      "https://admin.googleapis.com/admin/directory/v1/users/$user_email/tokens" \
+      | jq '[.items[]? | {client_id: .clientId, display_text: .displayText, scopes: .scopes}]')
+    if [ "$(echo "$tokens" | jq 'length')" -gt 0 ]; then
+      echo "{\"user\": \"$user_email\", \"tokens\": $tokens}"
+    fi
+  done | jq -s '.'
+
+# look for high-risk OAuth scopes (these apps can read all email or drive files):
+# risky scopes:
+#   https://mail.google.com/ (full email access)
+#   https://www.googleapis.com/auth/drive (full drive access)
+#   https://www.googleapis.com/auth/gmail.readonly (read all email)
+```
+
+### FIX
+
+> **OAuth app control is configured in Admin Console:**
+>
+> 1. go to https://admin.google.com > Security > Access and data control > API controls
+> 2. under "App access control":
+>    - set default access: **"Don't allow users to access any third-party apps"** (restrictive)
+>    - or: **"Allow users to access only trusted apps"** (moderate)
+> 3. under "Manage third-party app access":
+>    - review the list of authorized apps
+>    - mark known business apps as "Trusted" (e.g., Slack, Zoom, Salesforce)
+>    - mark unknown or risky apps as "Blocked"
+> 4. enable "Force users to get admin approval before accessing new third-party apps"
+
+```bash
+# revoke a specific OAuth token for a user
+# --- via GAM ---
+gam user user@yourdomain.com delete token clientid "CLIENT_ID_HERE"
+
+# --- via API ---
+curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/users/user@yourdomain.com/tokens/CLIENT_ID_HERE"
+
+# bulk revoke all tokens for a user (during offboarding)
+gam user user@yourdomain.com deprovision
+```
+
+### VERIFY
+
+```bash
+# verify app access policy is restrictive
+# check via Admin Console: Security > API controls > App access control
+# take a screenshot showing the policy is set to restricted/trusted-only
+
+# verify no unauthorized high-risk tokens remain
+gam all users show tokens \
+  | grep -iE "mail\.google\.com|auth/drive[^.]|gmail\.readonly" \
+  | sort -u
+# expected: only known, trusted apps should appear
+```
+
+### EVIDENCE
+
+```bash
+gam all users show tokens > evidence/gw-oauth-tokens-$(date +%Y-%m-%d).csv
+
+# also save Admin Console screenshot:
+# evidence/gw-oauth-policy-screenshot-$(date +%Y-%m-%d).png
+```
+
+---
+
+## 3-gws.9 audit log export (Reports API)
+
+Google Workspace audit logs record all admin actions, user logins, drive activity, and OAuth grants. these logs are critical for incident investigation and SOC 2 evidence. Google retains audit logs for 6 months — you must export them for long-term retention.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+# login activity
+gam report login start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -20
+
+# admin activity
+gam report admin start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -20
+
+# token activity (OAuth grants and revocations)
+gam report token start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -20
+
+# drive activity
+gam report drive start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -20
+
+# --- via API (Reports API) ---
+# available applications: admin, login, drive, token, groups_enterprise,
+#   calendar, gcp, chat, meet, rules, user_accounts
+
+SEVEN_DAYS_AGO=$(date -v-7d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "7 days ago" +%Y-%m-%dT00:00:00.000Z)
+
+# login events
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$SEVEN_DAYS_AGO&maxResults=10" \
+  | jq '[.items[:5] | .[] | {
+    actor: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    ip: .ipAddress,
+    login_type: (.events[0].parameters[]? | select(.name == "login_type") | .value)
+  }]'
+
+# admin events
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin?startTime=$SEVEN_DAYS_AGO&maxResults=10" \
+  | jq '[.items[:5] | .[] | {
+    actor: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    parameters: [.events[0].parameters[]? | {name: .name, value: (.value // .intValue // .boolValue)}]
+  }]'
+
+# token events (OAuth grants/revocations)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/token?startTime=$SEVEN_DAYS_AGO&maxResults=10" \
+  | jq '[.items[:5] | .[] | {
+    actor: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    app_name: (.events[0].parameters[]? | select(.name == "app_name") | .value),
+    scopes: (.events[0].parameters[]? | select(.name == "scope") | .multiValue)
+  }]'
+
+# check for suspicious login events (failed logins, logins from new locations)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$SEVEN_DAYS_AGO&eventName=login_failure&maxResults=100" \
+  | jq '[.items[]? | {
+    user: .actor.email,
+    time: .id.time,
+    ip: .ipAddress,
+    failure_reason: (.events[0].parameters[]? | select(.name == "login_failure_type") | .value)
+  }]'
+```
+
+### FIX
+
+```bash
+# Google Workspace admin audit logging is always on — you cannot disable it.
+# the fix is ensuring logs are exported for long-term retention (>= 1 year for SOC 2).
+
+# option 1: BigQuery export (built-in, recommended)
+# go to admin.google.com > Account > Account settings > Legal and compliance > Sharing options
+# enable "Google Workspace data export to BigQuery"
+# this streams all audit logs to a BigQuery dataset in real-time.
+# BigQuery retains data indefinitely (subject to your table expiration settings).
+
+# option 2: daily export via API to your SIEM or S3
+#!/bin/bash
+# gw-audit-export.sh — run daily via cron
+# cron: 0 3 * * * /opt/scripts/gw-audit-export.sh
+
+OUTPUT_DIR="/var/log/gw-audit"
+mkdir -p "$OUTPUT_DIR"
+YESTERDAY=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d "yesterday" +%Y-%m-%d)
+
+for app in admin login drive token groups_enterprise user_accounts; do
+  echo "exporting ${app} logs for ${YESTERDAY}..."
+  curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+    "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/${app}?startTime=${YESTERDAY}T00:00:00Z&endTime=${YESTERDAY}T23:59:59Z&maxResults=1000" \
+    > "${OUTPUT_DIR}/${app}-${YESTERDAY}.json"
+
+  count=$(jq '.items | length // 0' "${OUTPUT_DIR}/${app}-${YESTERDAY}.json" 2>/dev/null || echo 0)
+  echo "  exported ${count} events"
+done
+
+# ship to SIEM or S3
+# aws s3 sync "$OUTPUT_DIR" "s3://{{COMPANY}}-audit-logs/google-workspace/"
+# or: send to Splunk via HEC, Datadog, etc.
+```
+
+### VERIFY
+
+```bash
+# confirm logs are flowing and recent
+# --- via GAM ---
+gam report admin event_name=CREATE_USER | head -5
+# expected: recent user creation events (or other admin events)
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin?maxResults=1" \
+  | jq '.items[0].id.time'
+# expected: recent timestamp (within last 24 hours)
+
+# verify BigQuery export (if using option 1):
+# bq query --use_legacy_sql=false \
+#   'SELECT COUNT(*) as event_count, DATE(id.time) as day
+#    FROM `project.dataset.activity`
+#    WHERE DATE(id.time) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+#    GROUP BY day ORDER BY day DESC'
+```
+
+### EVIDENCE
+
+```bash
+# export audit logs for the audit period
+gam report admin start_date {{AUDIT_PERIOD_START}} end_date {{AUDIT_PERIOD_END}} \
+  > evidence/gw-admin-audit-$(date +%Y-%m-%d).csv
+
+gam report login start_date {{AUDIT_PERIOD_START}} end_date {{AUDIT_PERIOD_END}} \
+  > evidence/gw-login-audit-$(date +%Y-%m-%d).csv
+
+# via API (sample — auditors typically want a sample, not the full dataset)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime={{AUDIT_PERIOD_START}}T00:00:00Z&maxResults=100" \
+  | jq '[.items[] | {
+    user: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    ip: .ipAddress
+  }]' > evidence/gw-login-sample-$(date +%Y-%m-%d).json
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/admin?startTime={{AUDIT_PERIOD_START}}T00:00:00Z&maxResults=100" \
+  | jq '[.items[] | {
+    actor: .actor.email,
+    time: .id.time,
+    event: .events[0].name
+  }]' > evidence/gw-admin-sample-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.10 mobile device management
+
+mobile devices accessing corporate Google data must be managed. unmanaged devices are a data leakage vector — if an employee's phone is lost or stolen, corporate email and drive data are exposed.
+
+### DISCOVER
+
+```bash
+# --- via GAM ---
+gam print mobile fields email,os,type,status,deviceId,model,serialNumber,lastSync
+
+# count by status
+gam print mobile fields status | awk -F, 'NR > 1 { count[$1]++ } END { for (s in count) print s, count[s] }'
+
+# find devices not synced in 30+ days (stale)
+gam print mobile fields email,lastSync,status \
+  | awk -F, -v cutoff="$(date -v-30d +%Y-%m-%d 2>/dev/null || date -d '30 days ago' +%Y-%m-%d)" \
+    'NR > 1 && $2 < cutoff { print "STALE:", $0 }'
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile?maxResults=100" \
+  | jq '[.mobiledevices[]? | {
+    email: .email[0],
+    os: .os,
+    type: .type,
+    model: .model,
+    status: .status,
+    device_id: .deviceId,
+    last_sync: .lastSync,
+    serial_number: .serialNumber,
+    encryption_status: .encryptionStatus,
+    device_compromised: .deviceCompromisedStatus
+  }]'
+
+# find compromised or unencrypted devices
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile?maxResults=100" \
+  | jq '[.mobiledevices[]? | select(
+    .deviceCompromisedStatus == "COMPROMISED" or
+    .encryptionStatus == "UNENCRYPTED"
+  ) | {
+    email: .email[0],
+    device_id: .deviceId,
+    compromised: .deviceCompromisedStatus,
+    encrypted: .encryptionStatus
+  }]'
+# expected: [] (no compromised or unencrypted devices)
+```
+
+### FIX
+
+> **MDM settings are configured via Admin Console:**
+>
+> 1. go to https://admin.google.com > Devices > Mobile & endpoints > Settings > Universal
+> 2. enable **Advanced mobile management** (requires Business Plus or Enterprise)
+> 3. under Mobile management:
+>    - require device approval before accessing corporate data
+>    - require screen lock with PIN/password
+>    - require device encryption
+>    - enable remote account wipe
+> 4. under App management:
+>    - push required apps (e.g., company authenticator)
+>    - block unapproved apps from accessing corporate data
+> 5. enable **Endpoint Verification** for desktop devices:
+>    - Devices > Mobile & endpoints > Settings > Endpoint Verification
+>    - this installs a Chrome extension that reports device security posture
+
+```bash
+# approve a pending device
+# --- via GAM ---
+gam update mobile DEVICE_RESOURCE_ID action approve
+
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile/DEVICE_RESOURCE_ID/action" \
+  -d '{"action": "approve"}'
+
+# wipe a device (during offboarding or if lost/stolen)
+# account_wipe: removes only corporate data
+# wipe: full device wipe (use for company-owned devices only)
+
+# --- via GAM ---
+gam update mobile DEVICE_RESOURCE_ID action account_wipe
+
+# --- via API ---
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile/DEVICE_RESOURCE_ID/action" \
+  -d '{"action": "account_wipe"}'
+```
+
+### VERIFY
+
+```bash
+# re-check device inventory after policy enforcement
+# --- via GAM ---
+gam print mobile fields email,status,encryptionStatus | grep -v "APPROVED"
+# expected: no unapproved devices (or only recently enrolled pending approval)
+
+# --- via API ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile?maxResults=100" \
+  | jq '{
+    total_devices: (.mobiledevices | length),
+    approved: [.mobiledevices[]? | select(.status == "APPROVED")] | length,
+    pending: [.mobiledevices[]? | select(.status == "PENDING")] | length,
+    compromised: [.mobiledevices[]? | select(.deviceCompromisedStatus == "COMPROMISED")] | length,
+    unencrypted: [.mobiledevices[]? | select(.encryptionStatus == "UNENCRYPTED")] | length
+  }'
+# expected: compromised=0, unencrypted=0
+```
+
+### EVIDENCE
+
+```bash
+gam print mobile fields email,os,type,status,model,serialNumber,lastSync,encryptionStatus,deviceCompromisedStatus \
+  > evidence/gw-mobile-devices-$(date +%Y-%m-%d).csv
+
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/directory/v1/customer/$CUSTOMER_ID/devices/mobile?maxResults=500" \
+  | jq '[.mobiledevices[]? | {
+    email: .email[0],
+    os: .os,
+    type: .type,
+    model: .model,
+    status: .status,
+    last_sync: .lastSync,
+    encrypted: .encryptionStatus,
+    compromised: .deviceCompromisedStatus
+  }]' > evidence/gw-mobile-devices-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.11 context-aware access
+
+context-aware access (CAA) restricts access to Google services based on device security posture, network location, and other signals. it is the Google Workspace equivalent of conditional access in Azure AD / Entra ID.
+
+> **requires:** Google Workspace Enterprise Standard/Plus, or BeyondCorp Enterprise
+
+### DISCOVER
+
+```bash
+# context-aware access is configured via Admin Console and managed through
+# the Access Context Manager API (part of BeyondCorp).
+
+# check if any access levels are defined:
+# go to admin.google.com > Security > Access and data control > Context-aware access
+
+# via gcloud (Access Context Manager API):
+# list access policies
+gcloud access-context-manager policies list
+
+# list access levels within a policy
+# gcloud access-context-manager levels list --policy=POLICY_ID
+
+# note: the Access Context Manager API requires Google Cloud organization-level
+# permissions and is separate from the Admin SDK.
+```
+
+### FIX
+
+> **configure in Admin Console:**
+>
+> 1. go to https://admin.google.com > Security > Access and data control > Context-aware access
+> 2. create access levels based on:
+>    - device encryption status: must be encrypted
+>    - OS version: minimum OS version (e.g., macOS 14+, Windows 11+, ChromeOS latest-1)
+>    - endpoint verification: device must have endpoint verification extension
+>    - network: restrict to corporate VPN or known IP ranges (optional)
+>    - device management: device must be company-managed
+> 3. assign access levels to apps:
+>    - Gmail: require encrypted + endpoint verified
+>    - Drive: require encrypted + endpoint verified
+>    - Admin Console: require managed device + corporate network
+> 4. set monitoring mode first (logs violations but does not block) for 2 weeks
+> 5. switch to enforcement mode after confirming no false positives
+>
+> **note:** context-aware access only works for apps that users access through their browser or mobile apps. it does not affect API access via service accounts.
+
+### VERIFY
+
+> take a screenshot of the Admin Console context-aware access page showing:
+> - defined access levels and their conditions
+> - app-to-access-level assignments
+> - enforcement mode (not just monitoring)
+
+### EVIDENCE
+
+```bash
+# export access level definitions via gcloud:
+# gcloud access-context-manager levels list --policy=POLICY_ID --format=json \
+#   > evidence/gw-caa-access-levels-$(date +%Y-%m-%d).json
+
+# save Admin Console screenshots:
+# evidence/gw-context-aware-access-screenshot-$(date +%Y-%m-%d).png
+
+# check access denial events in audit logs:
+# (context-aware access denials appear in the login audit log)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/login?startTime=$SEVEN_DAYS_AGO&eventName=login_failure&maxResults=100" \
+  | jq '[.items[]? | select(
+    .events[0].parameters[]? | select(.name == "login_failure_type") | .value == "login_challenge_method"
+  ) | {
+    user: .actor.email,
+    time: .id.time,
+    ip: .ipAddress
+  }]' > evidence/gw-caa-denials-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.12 data loss prevention (DLP)
+
+DLP rules detect and block sensitive data (SSN, credit card numbers, API keys) from being shared externally via Gmail or Drive.
+
+> **requires:** Google Workspace Enterprise Standard/Plus
+
+### DISCOVER
+
+```bash
+# DLP rules are configured via Admin Console.
+# there is no public REST API to read DLP rule configurations directly.
+
+# check via Admin Console:
+# admin.google.com > Security > Access and data control > Data protection
+# review existing rules, their conditions, and actions
+
+# check DLP violation events in the Rules audit log:
+# --- via GAM ---
+gam report rules start_date $(date -v-30d +%Y-%m-%d 2>/dev/null || date -d "30 days ago" +%Y-%m-%d)
+
+# --- via API ---
+THIRTY_DAYS_AGO=$(date -v-30d +%Y-%m-%dT00:00:00.000Z 2>/dev/null || date -d "30 days ago" +%Y-%m-%dT00:00:00.000Z)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/rules?startTime=$THIRTY_DAYS_AGO&maxResults=100" \
+  | jq '[.items[]? | {
+    actor: .actor.email,
+    time: .id.time,
+    event: .events[0].name,
+    rule_name: (.events[0].parameters[]? | select(.name == "rule_name") | .value),
+    triggered_action: (.events[0].parameters[]? | select(.name == "triggered_actions") | .value)
+  }]'
+```
+
+### FIX
+
+> **configure DLP rules in Admin Console:**
+>
+> 1. go to https://admin.google.com > Security > Access and data control > Data protection
+> 2. click "Manage Rules" > "Add Rule"
+> 3. create rules for:
+>    - **SSN detection:** condition = "US Social Security Number", action = block external sharing + alert admin
+>    - **credit card detection:** condition = "Credit Card Number", action = block external sharing + alert admin
+>    - **API key/secret detection:** condition = custom regex patterns for common key formats, action = warn user + alert admin
+>    - **source code protection:** condition = file type is code (.py, .js, .go, etc.), action = warn when sharing externally
+> 4. for each rule:
+>    - scope: all users or specific OUs
+>    - triggers: Gmail (outbound), Drive (external sharing)
+>    - actions: warn, block, quarantine, alert admin
+> 5. start with "warn" mode (shows users a warning but allows the action) for 2 weeks
+> 6. switch to "block" mode after confirming rules are accurate
+
+### VERIFY
+
+> take a screenshot of the Admin Console DLP rules page showing all configured rules, their conditions, and actions.
+
+```bash
+# verify DLP is triggering by checking the rules audit log:
+gam report rules start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d) \
+  | head -10
+# if DLP rules are working, you should see events when sensitive content is detected
+```
+
+### EVIDENCE
+
+```bash
+# DLP rule trigger events
+gam report rules start_date {{AUDIT_PERIOD_START}} end_date {{AUDIT_PERIOD_END}} \
+  > evidence/gw-dlp-events-$(date +%Y-%m-%d).csv
+
+# Admin Console screenshot of DLP rule configuration:
+# evidence/gw-dlp-rules-screenshot-$(date +%Y-%m-%d).png
+
+# summary statistics via API
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/rules?startTime={{AUDIT_PERIOD_START}}T00:00:00Z&maxResults=1000" \
+  | jq '{
+    total_events: (.items | length),
+    by_rule: [.items[]? | (.events[0].parameters[]? | select(.name == "rule_name") | .value)] | group_by(.) | map({rule: .[0], count: length})
+  }' > evidence/gw-dlp-summary-$(date +%Y-%m-%d).json
+```
+
+---
+
+## 3-gws.13 Alert Center
+
+the Alert Center aggregates security alerts from across Google Workspace — suspicious login attempts, government-backed attacks, device compromises, DLP violations, and more. auditors want to see that you monitor and respond to security alerts.
+
+### DISCOVER
+
+```bash
+# --- via API (Alert Center API) ---
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts?pageSize=20" \
+  | jq '[.alerts[]? | {
+    alert_id: .alertId,
+    type: .type,
+    source: .source,
+    create_time: .createTime,
+    start_time: .startTime,
+    status: .metadata.status,
+    severity: .metadata.severity,
+    customer_id: .customerId
+  }]'
+
+# filter by type (common alert types):
+# - "Google identity"          — suspicious login, leaked password
+# - "Gmail phishing"           — phishing email detected
+# - "Device compromised"       — device rooted/jailbroken
+# - "Government backed attack" — state-sponsored attack targeting your users
+# - "Suspicious login"         — login from unusual location
+# - "User reported phishing"   — user reported email as phishing
+
+# get alert details
+ALERT_ID="your-alert-id-here"
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts/$ALERT_ID" \
+  | jq '{
+    type: .type,
+    source: .source,
+    create_time: .createTime,
+    status: .metadata.status,
+    data: .data
+  }'
+
+# list unresolved alerts
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts?filter=status%3D%22NOT_STARTED%22&pageSize=50" \
+  | jq '[.alerts[]? | {
+    type: .type,
+    create_time: .createTime,
+    severity: .metadata.severity
+  }]'
+```
+
+### FIX
+
+> **configure alert notification rules:**
+>
+> 1. go to https://admin.google.com > Security > Alert center
+> 2. click "Settings" (gear icon)
+> 3. for each alert type, configure:
+>    - email notification to security team distribution list
+>    - integration with your incident management tool (PagerDuty, Opsgenie, etc.)
+>
+> **for automated response:**
+
+```bash
+# mark an alert as acknowledged
+curl -s -X POST -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts/$ALERT_ID/feedback" \
+  -d '{"type": "ALERT_FEEDBACK_TYPE_USEFUL", "alertId": "'"$ALERT_ID"'"}'
+
+# update alert metadata (mark as in progress)
+curl -s -X PATCH -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts/$ALERT_ID/metadata" \
+  -d '{"status": "IN_PROGRESS"}'
+```
+
+### VERIFY
+
+```bash
+# verify alerts are flowing and being processed
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts?pageSize=5" \
+  | jq '{
+    total_alerts: (.alerts | length),
+    unresolved: [.alerts[]? | select(.metadata.status != "CLOSED")] | length,
+    most_recent: .alerts[0]?.createTime
+  }'
+# expected: most_recent should be recent, unresolved should not be accumulating
+```
+
+### EVIDENCE
+
+```bash
+# export all alerts for the audit period
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://alertcenter.googleapis.com/v1beta1/alerts?pageSize=200" \
+  | jq '[.alerts[]? | {
+    type: .type,
+    source: .source,
+    create_time: .createTime,
+    status: .metadata.status,
+    severity: .metadata.severity
+  }]' > evidence/gw-alerts-$(date +%Y-%m-%d).json
+
+# alert center screenshot:
+# evidence/gw-alert-center-screenshot-$(date +%Y-%m-%d).png
+```
+
+---
+
+## quarterly access review script (Google Workspace)
+
+this script generates a complete quarterly access review report. run it at the start of each quarter.
+
+```bash
+#!/bin/bash
+# gw-quarterly-access-review.sh
+# generates a markdown evidence report for SOC 2 quarterly access review.
+# usage: ./gw-quarterly-access-review.sh 2026 Q2
+
+set -euo pipefail
+
+YEAR="${1:-$(date +%Y)}"
+QUARTER="${2:-Q$(( ($(date +%-m) - 1) / 3 + 1 ))}"
+DATE=$(date +%Y-%m-%d)
+REPORT_FILE="evidence/access-review-gws-${YEAR}-${QUARTER}.md"
+EVIDENCE_DIR="evidence"
+
+mkdir -p "$EVIDENCE_DIR"
+
+echo "generating Google Workspace access review for ${YEAR} ${QUARTER}..."
+
+# --- header ---
+cat > "$REPORT_FILE" << EOF
+# Google Workspace Access Review — ${YEAR} ${QUARTER}
+
+**Generated:** ${DATE}
+**Reviewer:** $(whoami)
+**Tool:** GAM + Admin SDK API
+
+---
+
+EOF
+
+# --- 1. all active users with 2SV status ---
+echo "## 1. Active Users with 2SV Status" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo '```' >> "$REPORT_FILE"
+
+gam print users fields primaryEmail,isEnrolledIn2Sv,isEnforcedIn2Sv,lastLoginTime,orgUnitPath,isAdmin \
+  query "isSuspended=false" \
+  | tee "${EVIDENCE_DIR}/gw-active-users-${DATE}.csv" \
+  >> "$REPORT_FILE"
+
+echo '```' >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+TOTAL_USERS=$(gam print users query "isSuspended=false" fields primaryEmail | awk 'NR > 1' | wc -l | tr -d ' ')
+echo "**Total active users:** ${TOTAL_USERS}" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# --- 2. all groups and memberships ---
+echo "## 2. Groups and Memberships" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo '```' >> "$REPORT_FILE"
+
+gam print groups fields email,name,directMembersCount \
+  | tee "${EVIDENCE_DIR}/gw-groups-${DATE}.csv" \
+  >> "$REPORT_FILE"
+
+echo '```' >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "### Group Membership Details" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo '```' >> "$REPORT_FILE"
+
+gam print group-members fields email,role,type \
+  | tee "${EVIDENCE_DIR}/gw-group-memberships-${DATE}.csv" \
+  >> "$REPORT_FILE"
+
+echo '```' >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# --- 3. all admin users ---
+echo "## 3. Admin Users" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo '```' >> "$REPORT_FILE"
+
+gam print users query "isAdmin=true" \
+  fields primaryEmail,isAdmin,isDelegatedAdmin,isEnrolledIn2Sv,lastLoginTime \
+  | tee "${EVIDENCE_DIR}/gw-admins-${DATE}.csv" \
+  >> "$REPORT_FILE"
+
+echo '```' >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+ADMIN_COUNT=$(gam print users query "isAdmin=true" fields primaryEmail | awk 'NR > 1' | wc -l | tr -d ' ')
+echo "**Total admin users:** ${ADMIN_COUNT}" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# --- 4. stale accounts (no login in 90+ days) ---
+echo "## 4. Stale Accounts (No Login in 90+ Days)" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+CUTOFF_DATE=$(date -v-90d +%Y-%m-%d 2>/dev/null || date -d "90 days ago" +%Y-%m-%d)
+
+STALE_ACCOUNTS=$(gam print users fields primaryEmail,lastLoginTime,creationTime,orgUnitPath \
+  query "isSuspended=false" \
+  | awk -F, -v cutoff="$CUTOFF_DATE" \
+    'NR > 1 && ($2 == "" || $2 < cutoff)')
+
+if [ -n "$STALE_ACCOUNTS" ]; then
+  STALE_COUNT=$(echo "$STALE_ACCOUNTS" | wc -l | tr -d ' ')
+  echo "**FINDING:** ${STALE_COUNT} stale account(s) detected:" >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo '```' >> "$REPORT_FILE"
+  echo "$STALE_ACCOUNTS" >> "$REPORT_FILE"
+  echo '```' >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo "**Remediation:** investigate and suspend if no longer needed." >> "$REPORT_FILE"
+else
+  echo "No stale accounts found. All active users have logged in within the past 90 days." >> "$REPORT_FILE"
+fi
+echo "" >> "$REPORT_FILE"
+
+# --- 5. users without 2SV ---
+echo "## 5. Users Without 2-Step Verification" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+NO_2SV=$(gam print users fields primaryEmail,isEnrolledIn2Sv \
+  query "isSuspended=false" \
+  | awk -F, 'NR > 1 && $NF == "False"')
+
+if [ -n "$NO_2SV" ]; then
+  NO_2SV_COUNT=$(echo "$NO_2SV" | wc -l | tr -d ' ')
+  echo "**FINDING:** ${NO_2SV_COUNT} user(s) without 2SV:" >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo '```' >> "$REPORT_FILE"
+  echo "$NO_2SV" >> "$REPORT_FILE"
+  echo '```' >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo "**Remediation:** enforce 2SV immediately for these users." >> "$REPORT_FILE"
+else
+  echo "All active users have 2-Step Verification enrolled." >> "$REPORT_FILE"
+fi
+echo "" >> "$REPORT_FILE"
+
+# --- 6. suspended users ---
+echo "## 6. Suspended Users" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo '```' >> "$REPORT_FILE"
+
+gam print users query "isSuspended=true" \
+  fields primaryEmail,suspensionReason,lastLoginTime \
+  | tee "${EVIDENCE_DIR}/gw-suspended-users-${DATE}.csv" \
+  >> "$REPORT_FILE"
+
+echo '```' >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+# --- 7. summary ---
+echo "## 7. Review Summary" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo "| metric | count |" >> "$REPORT_FILE"
+echo "|--------|-------|" >> "$REPORT_FILE"
+echo "| active users | ${TOTAL_USERS} |" >> "$REPORT_FILE"
+echo "| admin users | ${ADMIN_COUNT} |" >> "$REPORT_FILE"
+echo "| stale accounts (90+ days) | ${STALE_COUNT:-0} |" >> "$REPORT_FILE"
+echo "| users without 2SV | ${NO_2SV_COUNT:-0} |" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+FINDINGS=0
+[ "${STALE_COUNT:-0}" -gt 0 ] && FINDINGS=$((FINDINGS + 1))
+[ "${NO_2SV_COUNT:-0}" -gt 0 ] && FINDINGS=$((FINDINGS + 1))
+[ "${ADMIN_COUNT}" -gt 5 ] && FINDINGS=$((FINDINGS + 1))
+
+if [ "$FINDINGS" -gt 0 ]; then
+  echo "**Total findings:** ${FINDINGS}" >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo "**Status:** requires remediation before sign-off." >> "$REPORT_FILE"
+else
+  echo "**Total findings:** 0" >> "$REPORT_FILE"
+  echo "" >> "$REPORT_FILE"
+  echo "**Status:** clean — ready for reviewer sign-off." >> "$REPORT_FILE"
+fi
+
+echo "" >> "$REPORT_FILE"
+echo "---" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo "**Reviewed by:** _____________________________ **Date:** __________" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo "**Approved by:** _____________________________ **Date:** __________" >> "$REPORT_FILE"
+
+echo ""
+echo "report generated: ${REPORT_FILE}"
+echo "supporting evidence files:"
+ls -la "${EVIDENCE_DIR}/gw-"*"-${DATE}"* 2>/dev/null || echo "(run GAM commands to generate)"
+```
+
+---
+
+## deprovisioning automation (Google Workspace)
+
+this section covers the full automation pipeline from HR termination signal to Google Workspace account suspension.
+
+### HR system integration options
+
+```bash
+# Google Workspace supports automated user lifecycle management through:
+#
+# 1. SCIM via Cloud Identity (recommended for large orgs)
+#    - Google Cloud Identity supports inbound SCIM 2.0
+#    - HR systems like Okta, Rippling, Workday, and BambooHR can push
+#      user lifecycle events (create, update, deactivate) via SCIM
+#    - configuration:
+#      a. enable Cloud Identity API in Google Cloud Console
+#      b. create a SCIM provisioning app in your HR/IdP system
+#      c. configure SCIM endpoint: https://www.googleapis.com/scim/v2
+#      d. authenticate with service account credentials
+#      e. map attributes: active=false triggers suspension
+#
+# 2. Admin SDK API integration (recommended for custom/small orgs)
+#    - build a webhook listener that receives termination events from HR
+#    - calls Admin SDK to suspend the user
+#    - this is what the offboard-gws.sh script does manually
+#
+# 3. Google Workspace Auto-licensing with Cloud Identity
+#    - if your IdP (Okta, Azure AD) is the master, Google Workspace
+#      can auto-suspend when the IdP signals deactivation
+#    - configure via admin.google.com > Account > Product management
+
+# --- verify SCIM integration is working ---
+# check for recent automated suspension events (actor should be the service account):
+gam report admin event_name=SUSPEND_USER \
+  start_date $(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d)
+# expected: suspension events with actor = your service account email
+```
+
+### automated offboarding pipeline
+
+the `offboard-gws.sh` script from section 3-gws.5 (tier 2) contains the core offboarding steps. to automate it via HR webhook or cron, wrap it with JSON input parsing and SLA tracking:
+
+```bash
+#!/bin/bash
+# gw-auto-offboard.sh — triggered by HR webhook or cron
+# wraps offboard-gws.sh with JSON input and SLA compliance tracking.
+#
+# expected input: JSON payload with terminated employee details
+# {
+#   "email": "user@yourdomain.com",
+#   "manager_email": "manager@yourdomain.com",
+#   "termination_type": "involuntary",
+#   "termination_date": "2026-04-06",
+#   "hr_ticket_id": "HR-1234"
+# }
+
+set -euo pipefail
+
+INPUT="${1:?usage: $0 <json-payload-file>}"
+USER_EMAIL=$(jq -r '.email' "$INPUT")
+MANAGER_EMAIL=$(jq -r '.manager_email' "$INPUT")
+TERM_TYPE=$(jq -r '.termination_type' "$INPUT")
+HR_TICKET=$(jq -r '.hr_ticket_id' "$INPUT")
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# run the core offboarding script (see section 3-gws.5 tier 2)
+./offboard-gws.sh "$USER_EMAIL" "$MANAGER_EMAIL" "${TERM_TYPE} — HR ticket: ${HR_TICKET}"
+
+# calculate SLA compliance
+COMPLETION_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+START_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s 2>/dev/null || date -d "$TIMESTAMP" +%s)
+END_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$COMPLETION_TIME" +%s 2>/dev/null || date -d "$COMPLETION_TIME" +%s)
+DURATION_MINUTES=$(( (END_EPOCH - START_EPOCH) / 60 ))
+
+if [ "$TERM_TYPE" = "involuntary" ]; then
+  SLA_MINUTES=60
+  SLA_LABEL="1 hour"
+else
+  SLA_MINUTES=480
+  SLA_LABEL="8 hours (end of day)"
+fi
+
+if [ "$DURATION_MINUTES" -le "$SLA_MINUTES" ]; then
+  echo "SLA: COMPLIANT (${DURATION_MINUTES} minutes, SLA: ${SLA_LABEL})"
+else
+  echo "SLA: VIOLATION (${DURATION_MINUTES} minutes, SLA: ${SLA_LABEL})"
+fi
+```
+
+### weekly reconciliation
+
+the `gw-deprovision-reconciliation.sh` from section 3-gws.5 (tier 3) handles orphaned account detection. extend it with a reverse diff (HR active but missing in GWS) by using sorted lists and `comm`:
+
+```bash
+#!/bin/bash
+# gw-weekly-reconciliation.sh — cron: 0 9 * * 1
+# extends the tier-3 reconciliation with bidirectional diff.
+
+set -euo pipefail
+
+DATE=$(date +%Y-%m-%d)
+REPORT="evidence/gw-weekly-recon-${DATE}.md"
+mkdir -p evidence
+
+echo "# Weekly GWS Reconciliation — ${DATE}" > "$REPORT"
+echo "" >> "$REPORT"
+
+# get active GWS users
+GWS_ACTIVE=$(gam print users query "isSuspended=false" fields primaryEmail \
+  | awk -F, 'NR > 1 { print tolower($1) }' | sort)
+
+# get HR active employees (replace with your HR API call)
+# HR_ACTIVE=$(curl -s -H "Authorization: Bearer ${HR_TOKEN}" \
+#   "https://api.yourhrsystem.com/employees?status=active" \
+#   | jq -r '.[].email' | tr '[:upper:]' '[:lower:]' | sort)
+
+# orphaned: active in GWS but not in HR
+echo "## Orphaned Accounts (active in GWS, not in HR)" >> "$REPORT"
+echo "" >> "$REPORT"
+ORPHANS=$(comm -23 <(echo "$GWS_ACTIVE") <(echo "$HR_ACTIVE") || true)
+if [ -n "$ORPHANS" ]; then
+  echo "$ORPHANS" | while read email; do echo "- ALERT: $email" >> "$REPORT"; done
+else
+  echo "None found." >> "$REPORT"
+fi
+
+# missing: in HR but not in GWS
+echo "" >> "$REPORT"
+echo "## Missing Accounts (in HR, not in GWS)" >> "$REPORT"
+echo "" >> "$REPORT"
+MISSING=$(comm -13 <(echo "$GWS_ACTIVE") <(echo "$HR_ACTIVE") || true)
+if [ -n "$MISSING" ]; then
+  echo "$MISSING" | while read email; do echo "- WARN: $email" >> "$REPORT"; done
+else
+  echo "None found." >> "$REPORT"
+fi
+
+echo "" >> "$REPORT"
+echo "## Summary" >> "$REPORT"
+echo "- GWS active: $(echo "$GWS_ACTIVE" | wc -l | tr -d ' ')" >> "$REPORT"
+echo "- HR active: $(echo "$HR_ACTIVE" | wc -l | tr -d ' ')" >> "$REPORT"
+echo "- Orphaned: $(echo "$ORPHANS" | grep -c . || echo 0)" >> "$REPORT"
+echo "- Missing: $(echo "$MISSING" | grep -c . || echo 0)" >> "$REPORT"
+
+echo "report: ${REPORT}"
+```
+
+### audit trail requirements
+
+```bash
+# for SOC 2 compliance, every deprovisioning event must have:
+#
+# 1. HR termination record (HR ticket ID, termination date, termination type)
+# 2. Google Workspace suspension timestamp (from admin audit log)
+# 3. token revocation confirmation
+# 4. data transfer confirmation (transfer ID, destination user)
+# 5. group removal confirmation
+# 6. device wipe confirmation
+# 7. SLA compliance calculation (time from HR notification to suspension)
+# 8. person who performed the action (or "automated" if via SCIM/script)
+#
+# the offboard-gws.sh script produces a log file per user that covers items 2-8.
+# item 1 comes from your HR system.
+#
+# auditors will cross-reference:
+#   HR termination date <-> GWS suspension timestamp
+# the gap between these two dates must be within SLA.
+#
+# export deprovisioning evidence for audit period:
+
+gam report admin event_name=SUSPEND_USER \
+  start_date {{AUDIT_PERIOD_START}} end_date {{AUDIT_PERIOD_END}} \
+  > evidence/gw-all-suspensions-audit-period.csv
+
+# cross-reference with HR terminations:
+# for each suspension event, verify a corresponding HR ticket exists
+# and the time delta is within SLA.
+```
+
+---
+
+## SOC 2 control mapping
+
+| control | TSC criteria | section |
+|---------|-------------|---------|
+| 2SV enforcement | CC6.1, CC6.2 | 3-gws.1 |
+| password policy | CC6.1, CC6.2 | 3-gws.2 |
+| session management | CC6.1 | 3-gws.3 |
+| user provisioning | CC6.1, CC6.3 | 3-gws.4 |
+| user deprovisioning | CC6.3 (access removal) | 3-gws.5 |
+| group-based access | CC6.1, CC6.3 | 3-gws.6 |
+| admin roles audit | CC6.1 | 3-gws.7 |
+| OAuth app control | CC6.1, CC6.6 | 3-gws.8 |
+| audit log export | CC7.2 (monitoring) | 3-gws.9 |
+| mobile device management | CC6.1, CC6.8 | 3-gws.10 |
+| context-aware access | CC6.1, CC6.6 | 3-gws.11 |
+| data loss prevention | CC6.5 (data protection) | 3-gws.12 |
+| alert center | CC7.2, CC7.3 (monitoring) | 3-gws.13 |
 
 
 ---
@@ -11807,6 +22240,7 @@ Section 05, v1.0 — Evidence collection automation, audit preparation materials
 
 ## version history
 
-- **3.0.0** (2026-04-06) — complete rewrite as truly executable agent skill: discovery-first approach with Prowler, DISCOVER→FIX→VERIFY→EVIDENCE for every control, decision-logic policies, Steampipe evidence queries, deprovisioning deep dive
+- **3.1.0** (2026-04-06) — added GCP security controls (38 controls), Azure security controls (44 controls), deep Google Workspace coverage (13 controls), navigation header with TOC and routing
+- **3.0.0** (2026-04-06) — complete rewrite as truly executable agent skill: discovery-first with Prowler, DISCOVER→FIX→VERIFY→EVIDENCE for every control, decision-logic policies, Steampipe evidence queries, deprovisioning deep dive
 - **2.0.0** (2026-04-06) — executable playbook with policy templates and configs
 - **1.0.0** (2026-04-06) — initial release (reference format)
