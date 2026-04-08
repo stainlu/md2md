@@ -17,3 +17,7 @@ custom_domain = true
 pattern = "soc2.md"
 custom_domain = true
 
+[[routes]]
+pattern = "ssi.md"
+custom_domain = true
+
