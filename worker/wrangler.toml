@@ -14,6 +14,10 @@ pattern = "md2md.md"
 custom_domain = true
 
 [[routes]]
+pattern = "goblin.md"
+custom_domain = true
+
+[[routes]]
 pattern = "soc2.md"
 custom_domain = true
 
@@ -21,3 +25,6 @@ custom_domain = true
 pattern = "ssi.md"
 custom_domain = true
 
+[[routes]]
+pattern = "loopengineering.md"
+custom_domain = true

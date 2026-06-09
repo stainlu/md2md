@@ -19,8 +19,15 @@ jobs:
         with:
           node-version: 20
 
+      - name: Validate md2md content
+        run: npm run validate
+
       - name: Install worker dependencies
         run: npm ci
+        working-directory: worker
+
+      - name: Check worker build
+        run: npm run check
         working-directory: worker
 
       - name: Deploy worker
@@ -33,7 +40,7 @@ jobs:
       - name: Upload content to KV
         run: |
           node scripts/generate-kv-bulk.mjs > /tmp/kv-bulk.json
-          npx wrangler kv bulk put /tmp/kv-bulk.json \
+          npm --prefix worker exec wrangler -- kv bulk put /tmp/kv-bulk.json \
             --namespace-id ${{ secrets.KV_NAMESPACE_ID }} --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

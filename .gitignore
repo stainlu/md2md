@@ -3,3 +3,4 @@ blog-draft.md
 .DS_Store
 node_modules/
 .wrangler/
+.wrangler-dry-run/
